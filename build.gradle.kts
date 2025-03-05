@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.1.20-RC"
+    kotlin("jvm") version "2.0.20" // Kotlin
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -14,6 +14,8 @@ repositories {
     maven("https://oss.sonatype.org/content/groups/public/") {
         name = "sonatype"
     }
+
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") // PlaceholderAPI
 }
 
 dependencies {
@@ -21,6 +23,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     compileOnly("com.zaxxer:HikariCP:5.1.0") // Hikari CP
+    compileOnly("me.clip:placeholderapi:2.11.6") // PlaceholderAPI
 }
 
 val targetJavaVersion = 21

@@ -2,3 +2,5 @@ name: FirOnlineTime
 version: '1.0-SNAPSHOT'
 main: top.catnies.firOnlineTime.FirOnlineTime
 api-version: '1.21'
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
