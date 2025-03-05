@@ -14,18 +14,25 @@ _✨一款轻量化便携性的Bukkit在线统计插件✨_
     <img src="https://img.shields.io/badge/支持版本-1.18 ~ 1.21.4-brightgreen?style=flat-square" alt="minecraft-version">
 </p>
 
-### 🔍 前置插件
+## 🔍 前置插件
+***
 - [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245)  
+  <br />
 
-### 📌 关于 
+## 📌 关于 
+***
 FirOnlineTime 是一款轻量化便携性的Bukkit在线统计插件。   
+<br />
 
-### 🔨 安装
+## 🔨 安装
+***
 1. 下载/构建最新的版本，将插件放入 `plugins` 文件夹。
 2. 启动服务器，生成默认配置文件。
-3. 打开 `settings.yml` 文件, 配置您的 Mysql 数据库信息，最后重启服务器。   
-
-### 💻 使用方法
+3. 打开 `settings.yml` 文件, 配置您的 Mysql 数据库信息，最后重启服务器。     
+   <br />
+  
+## 💻 使用方法
+***
 您可以使用PlaceholderAPI来获取玩家的在线时间。
 
 | 占位符 | 说明 |
