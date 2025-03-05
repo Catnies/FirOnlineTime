@@ -6,7 +6,3 @@ MySQL:
   properties:
     user: "catnies"
     password: "minato"
-
-
-Redis:
-  uri: "redis://127.0.0.1:6379/0"
