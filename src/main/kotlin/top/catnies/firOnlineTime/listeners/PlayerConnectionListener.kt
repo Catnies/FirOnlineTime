@@ -6,7 +6,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import top.catnies.firOnlineTime.FirOnlineTime
-import top.catnies.firOnlineTime.api.PlayerData
+import top.catnies.firOnlineTime.database.PlayerData
 import top.catnies.firOnlineTime.database.MysqlDatabase
 import top.catnies.firOnlineTime.managers.DataCacheManager
 

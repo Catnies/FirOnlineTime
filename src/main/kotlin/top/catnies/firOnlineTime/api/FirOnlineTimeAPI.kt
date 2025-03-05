@@ -1,6 +1,7 @@
 package top.catnies.firOnlineTime.api
 
 import org.bukkit.OfflinePlayer
+import top.catnies.firOnlineTime.database.PlayerData
 import top.catnies.firOnlineTime.managers.DataCacheManager
 
 enum class OnlineTimeType { TODAY, WEEK, MONTH, TOTAL }

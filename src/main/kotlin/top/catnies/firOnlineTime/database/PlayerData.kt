@@ -1,9 +1,7 @@
-package top.catnies.firOnlineTime.api
+package top.catnies.firOnlineTime.database
 
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
-import top.catnies.firOnlineTime.database.MysqlDatabase
-import top.catnies.firOnlineTime.database.QueryType
 import top.catnies.firOnlineTime.utils.TimeUtil
 
 open class PlayerData private constructor(

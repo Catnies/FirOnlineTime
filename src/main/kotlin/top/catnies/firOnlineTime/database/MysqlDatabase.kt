@@ -4,10 +4,9 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
-import org.bukkit.configuration.file.YamlConfiguration
 import top.catnies.firOnlineTime.FirOnlineTime
 import top.catnies.firOnlineTime.managers.DataCacheManager
-import top.catnies.firOnlineTime.utils.ConfigUtil
+import top.catnies.firOnlineTime.managers.SettingsManager
 import top.catnies.firOnlineTime.utils.TimeUtil
 import java.sql.Date
 import java.sql.SQLException
@@ -19,15 +18,8 @@ enum class QueryType {
 
 class MysqlDatabase private constructor(){
 
-    private val TABLENAME: String = "firOnlineTime"
-
-    private lateinit var config: YamlConfiguration
+    private val tableName: String = "firOnlineTime"
     private lateinit var mysql: HikariDataSource
-
-    private lateinit var JDBC_URL: String
-    private lateinit var JDBC_DRIVER: String
-    private lateinit var USERNAME: String
-    private lateinit var PASSWORD: String
 
     companion object {
         val instance: MysqlDatabase by lazy { MysqlDatabase().apply {
@@ -38,19 +30,12 @@ class MysqlDatabase private constructor(){
 
     // 重新加载配置文件
     fun reload() {
-        config = ConfigUtil.registerConfig("settings.yml")
-
-        JDBC_URL = config.getString("MySQL.jdbc-url")!!
-        JDBC_DRIVER = config.getString("MySQL.jdbc-class")!!
-        USERNAME = config.getString("MySQL.properties.user")!!
-        PASSWORD = config.getString("MySQL.properties.password")!!
-
         try {
             val hikariConfig = HikariConfig()
-            hikariConfig.jdbcUrl = JDBC_URL
-            hikariConfig.driverClassName = JDBC_DRIVER
-            hikariConfig.username = USERNAME
-            hikariConfig.password = PASSWORD
+            hikariConfig.jdbcUrl = SettingsManager.instance.JDBC_URL
+            hikariConfig.driverClassName = SettingsManager.instance.JDBC_DRIVER
+            hikariConfig.username = SettingsManager.instance.USERNAME
+            hikariConfig.password = SettingsManager.instance.PASSWORD
             mysql = HikariDataSource(hikariConfig)
 
             FirOnlineTime.instance!!.logger.info("MySQL 数据库已连接成功！")
@@ -68,7 +53,7 @@ class MysqlDatabase private constructor(){
             mysql.connection.use { connection ->
                 connection.prepareStatement(
                     """
-                    CREATE TABLE IF NOT EXISTS $TABLENAME (
+                    CREATE TABLE IF NOT EXISTS $tableName (
                     id INT AUTO_INCREMENT PRIMARY KEY, 
                     uuid VARCHAR(255) NOT NULL, 
                     date Date NOT NULL, 
@@ -90,7 +75,7 @@ class MysqlDatabase private constructor(){
         val uuid = player.uniqueId.toString()
         try {
             mysql.connection.use { connection ->
-                val sql = "INSERT INTO $TABLENAME (uuid, date, onlineTime) VALUES(?, ?, ?)"
+                val sql = "INSERT INTO $tableName (uuid, date, onlineTime) VALUES(?, ?, ?)"
                 connection.prepareStatement(sql).use { statement ->
                     // 替换占位符
                     statement.setString(1, uuid)
@@ -110,7 +95,7 @@ class MysqlDatabase private constructor(){
         val uuid = player.uniqueId.toString()
         try {
             mysql.connection.use { connection ->
-                val sql = "UPDATE $TABLENAME SET onlineTime = onlineTime + ? WHERE uuid = ? and date = ?"
+                val sql = "UPDATE $tableName SET onlineTime = onlineTime + ? WHERE uuid = ? and date = ?"
                 connection.prepareStatement(sql).use { statement ->
                     statement.setLong(1, addTime) // 增加的时间,单位毫秒
                     statement.setString(2, uuid)
@@ -129,7 +114,7 @@ class MysqlDatabase private constructor(){
         val uuid = player.uniqueId.toString()
         try {
             mysql.connection.use { connection ->
-                val sql = "SELECT onlineTime FROM $TABLENAME WHERE uuid = ? and date BETWEEN ? AND ?"
+                val sql = "SELECT onlineTime FROM $tableName WHERE uuid = ? and date BETWEEN ? AND ?"
                 connection.prepareStatement(sql).use { statement ->
                     statement.setString(1, uuid)
                     // 指定date范围
@@ -169,7 +154,6 @@ class MysqlDatabase private constructor(){
 
     // 更新单个玩家的数据库在线时间数据
     fun updateOnlineTime(player: OfflinePlayer, systemNow: Long = System.currentTimeMillis()) {
-        var uuid = player.uniqueId.toString()
         val data = DataCacheManager.instance.onlineCache[player.uniqueId] ?: return
         val lastLoginTime: Long = data.loginTime!!
 
