@@ -1,0 +1,4 @@
+name: FirOnlineTime
+version: '1.0-SNAPSHOT'
+main: top.catnies.firOnlineTime.FirOnlineTime
+api-version: '1.21'
