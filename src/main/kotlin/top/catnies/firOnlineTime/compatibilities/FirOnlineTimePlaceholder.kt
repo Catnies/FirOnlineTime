@@ -21,29 +21,29 @@ class FirOnlineTimePlaceholder private constructor() : PlaceholderExpansion() {
 
         when (params) {
             // 当日
-            "daily" -> {
+            "today" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, OnlineTimeType.TODAY)
                 return TimeUtil.formatTimeByMillis(onlineTime)
             }
-            "daily_value" -> {
+            "today_value" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, OnlineTimeType.TODAY)
                 return onlineTime.toString()
             }
             // 当周
-            "weekly" -> {
+            "week" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, OnlineTimeType.WEEK)
                 return TimeUtil.formatTimeByMillis(onlineTime)
             }
-            "weekly_value" -> {
+            "week_value" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, OnlineTimeType.WEEK)
                 return onlineTime.toString()
             }
             // 当月
-            "monthly" -> {
+            "month" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, OnlineTimeType.MONTH)
                 return TimeUtil.formatTimeByMillis(onlineTime)
             }
-            "monthly_value" -> {
+            "month_value" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, OnlineTimeType.MONTH)
                 return onlineTime.toString()
             }
