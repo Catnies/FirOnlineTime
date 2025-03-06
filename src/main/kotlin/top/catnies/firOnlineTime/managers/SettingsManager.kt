@@ -15,6 +15,7 @@ class SettingsManager private constructor(){
     var JDBC_DRIVER by Delegates.notNull<String>()
     var USERNAME by Delegates.notNull<String>()
     var PASSWORD by Delegates.notNull<String>()
+    var TABLE_NAME by Delegates.notNull<String>()
 
     companion object {
         val instance: SettingsManager by lazy { SettingsManager().apply { reload() } }
@@ -30,5 +31,6 @@ class SettingsManager private constructor(){
         JDBC_DRIVER = settings.getString("MySQL.jdbc-class")!!
         USERNAME = settings.getString("MySQL.properties.user")!!
         PASSWORD = settings.getString("MySQL.properties.password")!!
+        TABLE_NAME = settings.getString("MySQL.properties.table-name", "fir_online_time")!!
     }
 }

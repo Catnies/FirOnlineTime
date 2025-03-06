@@ -18,7 +18,7 @@ enum class QueryType {
 
 class MysqlDatabase private constructor(){
 
-    private val tableName: String = "firOnlineTime"
+    private val tableName: String = SettingsManager.instance.TABLE_NAME
     private lateinit var mysql: HikariDataSource
 
     companion object {
