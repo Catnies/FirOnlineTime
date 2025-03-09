@@ -8,7 +8,8 @@ open class PlayerData private constructor(
     val player: OfflinePlayer,
     var isOnline: Boolean,
 
-    var loginTime: Long?,
+    // 仅在线玩家存在
+    var lastSavedTime: Long?,
 
     var savedTodayOnlineTime: Long,
     var savedWeekOnlineTime: Long,
@@ -59,36 +60,35 @@ open class PlayerData private constructor(
 
     // 判断缓存是否因为跨日期而过期
     fun isExpired(): Boolean {
-        // 刷新时间小于今天的0点, 说明数据是昨天的, 过期了
-        if (dataRefreshTime <= TimeUtil.getTodayStartTimestamp()) { return true }
-        // 在线, 但是记录的登录时间小于今天的0点, 说明登录时间是昨天的, 查询时间也是昨天的, 过期了
-        if (isOnline) {
-            if (loginTime!! < TimeUtil.getTodayStartTimestamp()) { return true }
-        }
+        // 在线缓存, 如果 lastSavedTime 的日期和今天的日期不一致, 说明是昨天的, 过期了.
+        if (isOnline && TimeUtil.isExpire(lastSavedTime!!)) return true
+        // 离线缓存, 如果 dataRefreshTime 的日期和今天的日期不一致, 说明是昨天的, 过期了.
+        if (!isOnline && TimeUtil.isExpire(dataRefreshTime)) return true
         return false
     }
 
 
-    // 刷新缓存
-    fun refreshCache() {
-        savedTodayOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.DAY)
-        savedWeekOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK)
-        savedMonthOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH)
-        savedTotalOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL)
-        dataRefreshTime = System.currentTimeMillis()
-    }
-
-
-    // 保存数据
-    fun saveData() {
-        MysqlDatabase.instance.updateOnlineTime(this.player)
+    // 保存数据, 然后刷新缓存.
+    fun saveAndRefreshCache() {
+        // 离线缓存刷新, 只需要重新从数据库获取最新的数据即可.
+        if (!isOnline) {
+            savedTodayOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.DAY)
+            savedWeekOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK)
+            savedMonthOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH)
+            savedTotalOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL)
+            dataRefreshTime = System.currentTimeMillis()
+        }
+        // 在线缓存刷新, 需要计算出昨日的在线时间和今日在线时间, 然后保存到数据库中.
+        else {
+            MysqlDatabase.instance.saveAndRefreshOnlineCache(this.player)
+        }
     }
 
 
     // 获取当日在线时长
     fun getTodayOnlineTime(): Long {
         if (isOnline) {
-            return System.currentTimeMillis() - loginTime!! + savedTodayOnlineTime
+            return System.currentTimeMillis() - lastSavedTime!! + savedTodayOnlineTime
         }
         return savedTodayOnlineTime
     }
@@ -96,7 +96,7 @@ open class PlayerData private constructor(
     // 获取本周在线时长
     fun getWeekOnlineTime(): Long {
         if (isOnline) {
-            return System.currentTimeMillis() - loginTime!! + savedWeekOnlineTime
+            return System.currentTimeMillis() - lastSavedTime!! + savedWeekOnlineTime
         }
         return savedWeekOnlineTime
     }
@@ -104,7 +104,7 @@ open class PlayerData private constructor(
     // 获取本月在线时长
     fun getMonthOnlineTime(): Long {
         if (isOnline) {
-            return System.currentTimeMillis() - loginTime!! + savedMonthOnlineTime
+            return System.currentTimeMillis() - lastSavedTime!! + savedMonthOnlineTime
         }
         return savedMonthOnlineTime
     }
@@ -112,7 +112,7 @@ open class PlayerData private constructor(
     // 获取总在线时长
     fun getTotalOnlineTime(): Long {
         if (isOnline) {
-            return System.currentTimeMillis() - loginTime!! + savedTotalOnlineTime
+            return System.currentTimeMillis() - lastSavedTime!! + savedTotalOnlineTime
         }
         return savedTotalOnlineTime
     }

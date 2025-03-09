@@ -14,17 +14,15 @@ class DataCacheManager private constructor() {
 
     companion object {
         val instance: DataCacheManager by lazy { DataCacheManager().apply {
-
-            // 把缓存更新到数据库中.
+            // 把在线缓存定期更新到数据库中, 同时刷新缓存的 lastSavedTime 字段;
             Bukkit.getScheduler().runTaskTimerAsynchronously(FirOnlineTime.instance!!, Runnable {
-                onlineCache.values.forEach { it.saveData() }
+                onlineCache.values.forEach { it.saveAndRefreshCache() }
             }, 0L, SettingsManager.instance.CacheUpdateInterval.toLong() * 20L)
 
-            // 从数据库获取数据更新离线缓存,以防止玩家在其他服务器,但是旧缓存一直没有更新的情况.
+            // 定期从数据库获取数据更新服务器中的离线缓存, 以防止玩家在其他服务器, 但是旧缓存一直没有更新的情况;
             Bukkit.getScheduler().runTaskTimerAsynchronously(FirOnlineTime.instance!!, Runnable {
-                offlineCache.values.forEach { it.refreshCache() }
+                offlineCache.values.forEach { it.saveAndRefreshCache() }
             }, 0L, SettingsManager.instance.OfflinePlayerUpdateInterval.toLong() * 20L)
-
         } }
     }
 

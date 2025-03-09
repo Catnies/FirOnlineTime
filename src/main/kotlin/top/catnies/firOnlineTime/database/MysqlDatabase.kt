@@ -69,42 +69,24 @@ class MysqlDatabase private constructor(){
         }
     }
 
-
-    // Insert操作,一般是玩家本日首次登陆
-    fun insertOnlineTime(player: OfflinePlayer, date: Date, time: Long) {
+    // 插入 onlineTime 数据或使 onlineTime 增加
+    fun upsertOnlineTime(player: OfflinePlayer, date: Date, addTime: Long) {
         val uuid = player.uniqueId.toString()
         try {
-            mysql.connection.use { connection ->
-                val sql = "INSERT INTO $tableName (uuid, date, onlineTime) VALUES(?, ?, ?)"
+            mysql.connection.use { connection -> val sql = """
+                INSERT INTO $tableName (uuid, date, onlineTime)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE onlineTime = onlineTime + VALUES(onlineTime)
+            """.trimIndent()
                 connection.prepareStatement(sql).use { statement ->
-                    // 替换占位符
                     statement.setString(1, uuid)
-                    statement.setDate(2, date)
-                    statement.setLong(3, time)
-                    // 执行插入
+                    statement.setDate(2, java.sql.Date(date.time))  // 修正 Date 类型转换
+                    statement.setLong(3, addTime)
                     statement.execute()
                 }
             }
         } catch (e: SQLException) {
-            FirOnlineTime.instance!!.logger.severe("在线时间-插入数据时发生错误:$e")
-        }
-    }
-
-    // UPDATE操作,直接使onlineTime增加
-    fun addOnlineTime(player: OfflinePlayer, date: Date, addTime: Long) {
-        val uuid = player.uniqueId.toString()
-        try {
-            mysql.connection.use { connection ->
-                val sql = "UPDATE $tableName SET onlineTime = onlineTime + ? WHERE uuid = ? and date = ?"
-                connection.prepareStatement(sql).use { statement ->
-                    statement.setLong(1, addTime) // 增加的时间,单位毫秒
-                    statement.setString(2, uuid)
-                    statement.setDate(3, date)
-                    statement.execute()
-                }
-            }
-        } catch (e: SQLException) {
-            FirOnlineTime.instance!!.logger.severe("在线时间-更新数据时发生错误:$e")
+            FirOnlineTime.instance!!.logger.severe("在线时间-插入/更新数据时发生错误: $e")
         }
     }
 
@@ -147,59 +129,48 @@ class MysqlDatabase private constructor(){
         } catch (e: SQLException) {
             FirOnlineTime.instance!!.logger.severe("在线时间-查询玩家数据时发生错误: $e")
         }
-
-        return -1
+        return 0L
     }
 
 
     // 更新单个玩家的数据库在线时间数据
-    fun updateOnlineTime(player: OfflinePlayer, systemNow: Long = System.currentTimeMillis()) {
+    fun saveAndRefreshOnlineCache(player: OfflinePlayer, systemNow: Long = System.currentTimeMillis()) {
         val data = DataCacheManager.instance.onlineCache[player.uniqueId] ?: return
-        val lastLoginTime: Long = data.loginTime!!
+        val expire = TimeUtil.isExpire(data.lastSavedTime!!)
 
-        // 日期分界线
-        val tomorrow: Long = TimeUtil.getTomorrowStartByTimeMillisStamp(lastLoginTime)
+        // 如果缓存过期了, 代表已经跨日期了, 需要分割
+        if (expire) {
+            val boundary: Long = TimeUtil.getTomorrowStartByTimeMillisStamp(data.lastSavedTime!!)
+            val yesterdayPart = boundary - data.lastSavedTime!!
+            val yesterdayDate = Date(data.lastSavedTime!!)
+            val todayPart = systemNow - boundary
+            val todayDate = TimeUtil.getNowSQLDate()
 
-        // 处理日期变更, 如果时间戳超过了明天的0点, 则需要将时间戳分为两个部分
-        if (systemNow >= tomorrow) {
-            // 两个时间点不在同一天的情况
-            // 0点前
-            val past1 = tomorrow - lastLoginTime
-            val date1 = Date(lastLoginTime)
+            // 把最新的数据保存到数据库中
+            upsertOnlineTime(player, yesterdayDate, yesterdayPart)
+            upsertOnlineTime(player, todayDate, todayPart)
 
-            // 检测是否是本日首次记录,因为有可能玩家 23:59 登陆,然后 00:09 监听器才记录时间
-            val time: Long = queryPlayerData(player, date1, QueryType.DAY)
-            if (time == -1L) {
-                // 本日首次记录
-                insertOnlineTime(player, date1, past1)
-            } else {
-                addOnlineTime(player, date1, past1)
-            }
-
-            // 0点后
-            val past2 = systemNow - tomorrow
-            val date2: Date = TimeUtil.getNowSQLDate()
-            insertOnlineTime(player, date2, past2)
-
-            // 更新缓存中的日周月累计时间
-            Bukkit.getScheduler().runTaskAsynchronously(FirOnlineTime.instance!!, Runnable { data.refreshCache() })
-        } else {
-            // 两个时间点都在同一天的情况
-            val past = systemNow - lastLoginTime
-            val date = Date(lastLoginTime)
-
-            // 检测是否是本日首次记录
-            val time: Long = queryPlayerData(player, date, QueryType.DAY)
-            if (time == -1L) {
-                // 本日首次记录
-                insertOnlineTime(player, date, past)
-            } else {
-                addOnlineTime(player, date, past)
-            }
+            // 重新获取从数据库中获取数据, 刷新当前缓存
+            Bukkit.getScheduler().runTaskAsynchronously(FirOnlineTime.instance!!, Runnable {
+                data.saveAndRefreshCache()
+                data.lastSavedTime = systemNow
+                data.dataRefreshTime = systemNow
+            })
         }
 
-        // 更新缓存中的最后上线时间戳
-        data.loginTime = systemNow
+        // 如果缓存没有过期, 则直接更新
+        else {
+            val todayPart = systemNow - data.lastSavedTime!!
+            val todayDate = TimeUtil.getNowSQLDate()
+
+            // 把最新的数据保存到数据库中
+            upsertOnlineTime(player, todayDate, todayPart)
+
+            // 更新缓存中的最后上线时间戳, 今日在线时间
+            data.savedTodayOnlineTime += todayPart
+            data.lastSavedTime = systemNow
+            data.dataRefreshTime = systemNow
+        }
     }
 
 }

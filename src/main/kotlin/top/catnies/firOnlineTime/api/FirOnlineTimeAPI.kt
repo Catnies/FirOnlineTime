@@ -12,44 +12,22 @@ object FirOnlineTimeAPI {
      * 获取玩家的在线时长
      */
     fun getPlayerOnlineTime(player: OfflinePlayer, type: OnlineTimeType): Long {
-        // 离线
-        if (!player.isOnline) {
-            // 获取缓存
-            val data = DataCacheManager.instance.offlineCache[player.uniqueId] ?: PlayerData.createOfflineData(player)
-
-            // 检查缓存是否过期
-            if (data.isExpired()) {
-                // 过期, 更新缓存
-                data.refreshCache()
-            }
-
-            // 返回
-            return when (type) {
-                OnlineTimeType.TODAY -> data.getTodayOnlineTime()
-                OnlineTimeType.WEEK -> data.getWeekOnlineTime()
-                OnlineTimeType.MONTH -> data.getMonthOnlineTime()
-                OnlineTimeType.TOTAL -> data.getTotalOnlineTime()
-            }
+        // 获取玩家缓存
+        val data = if (player.isOnline) {
+            DataCacheManager.instance.onlineCache[player.uniqueId]!!
+        } else {
+            DataCacheManager.instance.offlineCache[player.uniqueId] ?: PlayerData.createOfflineData(player) // 没有离线缓存就新建离线缓存
         }
 
-        // 在线
-        else {
-            // 获取缓存
-            val data = DataCacheManager.instance.onlineCache[player.uniqueId]!!
+        // 检查缓存是否过期
+        if (data.isExpired()) data.saveAndRefreshCache()
 
-            // 检查缓存是否过期
-            if (data.isExpired()) {
-                // 过期, 更新缓存
-                data.refreshCache()
-            }
-
-            // 返回
-            return when (type) {
-                OnlineTimeType.TODAY -> data.getTodayOnlineTime()
-                OnlineTimeType.WEEK -> data.getWeekOnlineTime()
-                OnlineTimeType.MONTH -> data.getMonthOnlineTime()
-                OnlineTimeType.TOTAL -> data.getTotalOnlineTime()
-            }
+        // 根据类型返回不同的在线时长
+        return when (type) {
+            OnlineTimeType.TODAY -> data.getTodayOnlineTime()
+            OnlineTimeType.WEEK -> data.getWeekOnlineTime()
+            OnlineTimeType.MONTH -> data.getMonthOnlineTime()
+            OnlineTimeType.TOTAL -> data.getTotalOnlineTime()
         }
     }
 

@@ -55,7 +55,6 @@ object TimeUtil {
         return Date.valueOf(nowDate)
     }
 
-
     /**
      * 获取所在周的起始日期（周一）
      * @param date 当前日期
@@ -94,5 +93,16 @@ object TimeUtil {
     fun getMonthEnd(date: Date): Date {
         val endOfMonth = date.toLocalDate().withDayOfMonth(date.toLocalDate().lengthOfMonth())
         return Date.valueOf(endOfMonth)
+    }
+
+    /**
+     * 检查传入时间戳是否小于今天的0点
+     * @param timestamp 时间戳
+     * @return 是否小于今天的0点
+     */
+    fun isExpire(timestamp: Long): Boolean {
+        val now = LocalDateTime.now()
+        val date = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
+        return date.toLocalDate() < now.toLocalDate()
     }
 }

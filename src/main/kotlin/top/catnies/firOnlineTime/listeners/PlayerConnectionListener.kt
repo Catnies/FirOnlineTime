@@ -37,7 +37,7 @@ class PlayerConnectionListener private constructor(): Listener {
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         Bukkit.getScheduler().runTaskAsynchronously(FirOnlineTime.instance!!, Runnable {
-            MysqlDatabase.instance.updateOnlineTime(player = event.player, systemNow = System.currentTimeMillis())
+            MysqlDatabase.instance.saveAndRefreshOnlineCache(player = event.player, systemNow = System.currentTimeMillis())
             DataCacheManager.instance.onlineCache.remove(event.player.uniqueId)
         })
     }
