@@ -1,7 +1,5 @@
 package top.catnies.firOnlineTime.database
 
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import top.catnies.firOnlineTime.FirOnlineTime
@@ -9,53 +7,35 @@ import top.catnies.firOnlineTime.managers.DataCacheManager
 import top.catnies.firOnlineTime.managers.SettingsManager
 import top.catnies.firOnlineTime.utils.TimeUtil
 import java.sql.Date
+import java.sql.DriverManager
 import java.sql.SQLException
 
 
-class MysqlDatabase private constructor() : Database{
+class SqliteDatabase private constructor() : Database {
 
+    private var url: String = "jdbc:sqlite:plugins/FirOnlineTime/database.db"
     private val tableName: String = SettingsManager.instance.TABLE_NAME
-    private lateinit var mysql: HikariDataSource
 
     companion object {
-        val instance: MysqlDatabase by lazy { MysqlDatabase().apply {
-            reload()
+        val instance: SqliteDatabase by lazy { SqliteDatabase().apply {
             createTable()
         } }
     }
 
-    // 重新加载配置文件
-    fun reload() {
-        try {
-            val hikariConfig = HikariConfig()
-            hikariConfig.jdbcUrl = SettingsManager.instance.JDBC_URL
-            hikariConfig.driverClassName = SettingsManager.instance.JDBC_DRIVER
-            hikariConfig.username = SettingsManager.instance.USERNAME
-            hikariConfig.password = SettingsManager.instance.PASSWORD
-            mysql = HikariDataSource(hikariConfig)
-
-            FirOnlineTime.instance!!.logger.info("MySQL 数据库已连接成功！")
-        } catch (e: Exception) {
-            FirOnlineTime.instance!!.logger.severe("连接 MySQL 数据库时发生错误, 插件将自动关闭:")
-            e.printStackTrace()
-            FirOnlineTime.instance!!.server.pluginManager.disablePlugin(FirOnlineTime.instance!!)
-        }
-    }
-
-
     // 建表函数
     fun createTable() {
         try {
-            mysql.connection.use { connection ->
+            DriverManager.getConnection(url).use { connection ->
                 connection.prepareStatement(
                     """
                     CREATE TABLE IF NOT EXISTS $tableName (
-                    id INT AUTO_INCREMENT PRIMARY KEY, 
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
                     uuid VARCHAR(255) NOT NULL, 
                     date Date NOT NULL, 
-                    onlineTime BIGINT NOT NULL)
+                    onlineTime BIGINT NOT NULL,
+                    UNIQUE(uuid, date))
                     """
-                    .trimIndent()
+                        .trimIndent()
                 ).use { statement ->
                     statement.execute()
                 }
@@ -69,11 +49,14 @@ class MysqlDatabase private constructor() : Database{
     override fun upsertOnlineTime(player: OfflinePlayer, date: Date, addTime: Long) {
         val uuid = player.uniqueId.toString()
         try {
-            mysql.connection.use { connection -> val sql = """
+            DriverManager.getConnection(url).use { connection ->
+                // 与Mysql不同, Sqlite不支持ON DUPLICATE KEY UPDATE
+                val sql = """
                 INSERT INTO $tableName (uuid, date, onlineTime)
                 VALUES (?, ?, ?)
-                ON DUPLICATE KEY UPDATE onlineTime = onlineTime + VALUES(onlineTime)
-            """.trimIndent()
+                ON CONFLICT(uuid, date) DO UPDATE SET
+                onlineTime = onlineTime + excluded.onlineTime
+                """.trimIndent()
                 connection.prepareStatement(sql).use { statement ->
                     statement.setString(1, uuid)
                     statement.setDate(2, java.sql.Date(date.time))  // 修正 Date 类型转换
@@ -86,12 +69,11 @@ class MysqlDatabase private constructor() : Database{
         }
     }
 
-
     // 查询玩家数据
     override fun queryPlayerData(player: OfflinePlayer, baseDate: Date, queryType: QueryType): Long {
         val uuid = player.uniqueId.toString()
         try {
-            mysql.connection.use { connection ->
+            DriverManager.getConnection(url).use { connection ->
                 val sql = "SELECT onlineTime FROM $tableName WHERE uuid = ? and date BETWEEN ? AND ?"
                 connection.prepareStatement(sql).use { statement ->
                     statement.setString(1, uuid)
@@ -127,7 +109,6 @@ class MysqlDatabase private constructor() : Database{
         }
         return 0L
     }
-
 
     // 更新单个玩家的数据库在线时间数据
     override fun saveAndRefreshOnlineCache(player: OfflinePlayer, systemNow: Long) {

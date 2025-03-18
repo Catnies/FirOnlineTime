@@ -7,12 +7,13 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import top.catnies.firOnlineTime.FirOnlineTime
 import top.catnies.firOnlineTime.database.PlayerData
-import top.catnies.firOnlineTime.database.MysqlDatabase
 import top.catnies.firOnlineTime.managers.DataCacheManager
+import top.catnies.firOnlineTime.managers.DatabaseManager
 
 class PlayerConnectionListener private constructor(): Listener {
 
     companion object {
+        val database = DatabaseManager.instance.database
         val instance: PlayerConnectionListener by lazy { PlayerConnectionListener().apply {
             Bukkit.getServer().pluginManager.registerEvents(this, FirOnlineTime.instance!!)
         } }
@@ -37,7 +38,7 @@ class PlayerConnectionListener private constructor(): Listener {
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         Bukkit.getScheduler().runTaskAsynchronously(FirOnlineTime.instance!!, Runnable {
-            MysqlDatabase.instance.saveAndRefreshOnlineCache(player = event.player, systemNow = System.currentTimeMillis())
+            database.saveAndRefreshOnlineCache(player = event.player, systemNow = System.currentTimeMillis())
             DataCacheManager.instance.onlineCache.remove(event.player.uniqueId)
         })
     }

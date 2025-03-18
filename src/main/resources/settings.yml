@@ -4,7 +4,8 @@ CacheUpdateInterval: 300
 # 在尝试访问离线玩家的数据时, 离线玩家数据会进行缓存. 随后每间隔多久时间会尝试从数据库中更新一次缓存? (秒)
 OfflinePlayerUpdateInterval: 300
 
-# 数据库配置
+# 数据库配置, 支持 SQLite 和 MySQL
+DatabaseType: "SQLite"
 MySQL:
   jdbc-url: "jdbc:mysql://127.0.0.1:3306/minecraft?useSSL=false&autoReconnect=true"
   jdbc-class: "com.mysql.cj.jdbc.Driver"

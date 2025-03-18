@@ -2,16 +2,16 @@ package top.catnies.firOnlineTime.api
 
 import org.bukkit.OfflinePlayer
 import top.catnies.firOnlineTime.database.PlayerData
+import top.catnies.firOnlineTime.database.QueryType
 import top.catnies.firOnlineTime.managers.DataCacheManager
 
-enum class OnlineTimeType { TODAY, WEEK, MONTH, TOTAL }
 
 object FirOnlineTimeAPI {
 
     /**
      * 获取玩家的在线时长
      */
-    fun getPlayerOnlineTime(player: OfflinePlayer, type: OnlineTimeType): Long {
+    fun getPlayerOnlineTime(player: OfflinePlayer, type: QueryType): Long {
         // 获取玩家缓存
         val data = if (player.isOnline) {
             DataCacheManager.instance.onlineCache[player.uniqueId]!!
@@ -24,10 +24,10 @@ object FirOnlineTimeAPI {
 
         // 根据类型返回不同的在线时长
         return when (type) {
-            OnlineTimeType.TODAY -> data.getTodayOnlineTime()
-            OnlineTimeType.WEEK -> data.getWeekOnlineTime()
-            OnlineTimeType.MONTH -> data.getMonthOnlineTime()
-            OnlineTimeType.TOTAL -> data.getTotalOnlineTime()
+            QueryType.TODAY -> data.getTodayOnlineTime()
+            QueryType.WEEK -> data.getWeekOnlineTime()
+            QueryType.MONTH -> data.getMonthOnlineTime()
+            QueryType.TOTAL -> data.getTotalOnlineTime()
         }
     }
 

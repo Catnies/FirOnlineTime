@@ -10,7 +10,8 @@ class SettingsManager private constructor(){
     var CacheUpdateInterval by Delegates.notNull<Int>()
     var OfflinePlayerUpdateInterval by Delegates.notNull<Int>()
 
-    // MYSQL
+    // Database
+    var DatabaseType by Delegates.notNull<String>()
     var JDBC_URL by Delegates.notNull<String>()
     var JDBC_DRIVER by Delegates.notNull<String>()
     var USERNAME by Delegates.notNull<String>()
@@ -26,7 +27,8 @@ class SettingsManager private constructor(){
         CacheUpdateInterval = settings.getInt("CacheUpdateInterval", 600)
         OfflinePlayerUpdateInterval = settings.getInt("OfflinePlayerUpdateInterval", 600)
 
-        // MYSQL
+        // Database
+        DatabaseType = settings.getString("DatabaseType", "SQLite")!!
         JDBC_URL = settings.getString("MySQL.jdbc-url")!!
         JDBC_DRIVER = settings.getString("MySQL.jdbc-class")!!
         USERNAME = settings.getString("MySQL.properties.user")!!

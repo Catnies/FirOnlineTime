@@ -2,6 +2,7 @@ package top.catnies.firOnlineTime.database
 
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
+import top.catnies.firOnlineTime.managers.DatabaseManager
 import top.catnies.firOnlineTime.utils.TimeUtil
 
 open class PlayerData private constructor(
@@ -20,6 +21,8 @@ open class PlayerData private constructor(
 ) {
 
     companion object {
+        val database = DatabaseManager.instance.database
+        
         // 创建一个新的在线玩家缓存数据
         fun createOnlineData(player: Player, loginTime: Long): PlayerData {
             val data = PlayerData(
@@ -28,10 +31,10 @@ open class PlayerData private constructor(
 
                 loginTime,
 
-                MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.DAY),
-                MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK),
-                MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH),
-                MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL),
+                database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TODAY),
+                database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK),
+                database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH),
+                database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL),
 
                 System.currentTimeMillis()
             )
@@ -46,10 +49,10 @@ open class PlayerData private constructor(
 
                 null,
 
-                MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.DAY),
-                MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK),
-                MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH),
-                MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL),
+                database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TODAY),
+                database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK),
+                database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH),
+                database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL),
 
                 System.currentTimeMillis()
             )
@@ -72,15 +75,15 @@ open class PlayerData private constructor(
     fun saveAndRefreshCache() {
         // 离线缓存刷新, 只需要重新从数据库获取最新的数据即可.
         if (!isOnline) {
-            savedTodayOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.DAY)
-            savedWeekOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK)
-            savedMonthOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH)
-            savedTotalOnlineTime = MysqlDatabase.instance.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL)
+            savedTodayOnlineTime = database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TODAY)
+            savedWeekOnlineTime = database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK)
+            savedMonthOnlineTime = database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH)
+            savedTotalOnlineTime = database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL)
             dataRefreshTime = System.currentTimeMillis()
         }
         // 在线缓存刷新, 需要计算出昨日的在线时间和今日在线时间, 然后保存到数据库中.
         else {
-            MysqlDatabase.instance.saveAndRefreshOnlineCache(this.player)
+            database.saveAndRefreshOnlineCache(this.player)
         }
     }
 

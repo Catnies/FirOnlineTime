@@ -4,9 +4,9 @@ import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import top.catnies.firOnlineTime.commands.ReloadCommand
 import top.catnies.firOnlineTime.compatibilities.FirOnlineTimePlaceholder
-import top.catnies.firOnlineTime.database.MysqlDatabase
 import top.catnies.firOnlineTime.listeners.PlayerConnectionListener
 import top.catnies.firOnlineTime.managers.DataCacheManager
+import top.catnies.firOnlineTime.managers.DatabaseManager
 import top.catnies.firOnlineTime.managers.SettingsManager
 
 class FirOnlineTime : JavaPlugin() {
@@ -16,13 +16,12 @@ class FirOnlineTime : JavaPlugin() {
         var instance: FirOnlineTime? = null
     }
 
-
     override fun onEnable() {
         instance = this
         // Config
         SettingsManager.instance
-        // Data
-        MysqlDatabase.instance
+        // DataBase
+        DatabaseManager.instance
         DataCacheManager.instance
         // Listener
         PlayerConnectionListener.instance
@@ -31,11 +30,6 @@ class FirOnlineTime : JavaPlugin() {
         getCommand("fironlinetime")?.tabCompleter = ReloadCommand()
         // PlaceholderAPI
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) { FirOnlineTimePlaceholder.instance }
-    }
-
-    override fun onDisable() {
-
-
     }
 
 }
