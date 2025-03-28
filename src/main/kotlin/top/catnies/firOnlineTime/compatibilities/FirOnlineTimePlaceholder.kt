@@ -15,6 +15,7 @@ class FirOnlineTimePlaceholder private constructor() : PlaceholderExpansion() {
     override fun getIdentifier() = "fotime"
     override fun getAuthor() = "Catnies"
     override fun getVersion()= "1.0.0"
+    override fun persist() = true
 
     override fun onRequest(player: OfflinePlayer?, params: String): String? {
         if (player == null) { return null }
