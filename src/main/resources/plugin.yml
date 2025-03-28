@@ -1,5 +1,5 @@
 name: FirOnlineTime
-version: '1.0.3'
+version: '1.0.5'
 main: top.catnies.firOnlineTime.FirOnlineTime
 api-version: '1.18'
 softdepend:
