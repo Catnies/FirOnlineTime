@@ -1,10 +1,11 @@
 plugins {
     kotlin("jvm") version "2.0.20" // Kotlin
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.github.johnrengelman.shadow") version "8.1.1" // Shadow
+    id("xyz.jpenilla.run-paper") version "2.3.1" // Run Paper
 }
 
 group = "top.catnies"
-version = "1.0.5"
+version = "1.0.6"
 
 repositories {
     mavenCentral()
@@ -19,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.21.5-R0.1-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     compileOnly("com.zaxxer:HikariCP:5.1.0") // Hikari CP
@@ -31,8 +32,16 @@ kotlin {
     jvmToolchain(targetJavaVersion)
 }
 
-tasks.build {
-    dependsOn("shadowJar")
+tasks{
+    build {
+        dependsOn("shadowJar")
+    }
+    runServer {
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        minecraftVersion("1.21.4")
+    }
 }
 
 tasks.processResources {

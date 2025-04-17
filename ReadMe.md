@@ -5,7 +5,7 @@ _✨一款轻量化便携性的Bukkit在线统计插件✨_
 </div>
 
 <p align="center">
-    <img src="https://img.shields.io/badge/支持版本-1.18 ~ 1.21.4-brightgreen?style=flat-square" alt="minecraft-version">
+    <img src="https://img.shields.io/badge/支持版本-1.18 ~ 1.21.5-brightgreen?style=flat-square" alt="minecraft-version">
 </p>
 
 ## 📌 关于
