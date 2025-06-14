@@ -37,3 +37,17 @@ FirOnlineTime 是一款轻量化便携性的Bukkit在线统计插件。其支持
 | `%fotime_week_value%` | 本周玩家的在线时间的毫秒时间戳 |
 | `%fotime_month_value%` | 本月玩家的在线时间的毫秒时间戳 |
 | `%fotime_total_value%` | 玩家的总在线时间的毫秒时间戳 |
+
+
+## Repo
+
+```kotlin
+repositories {
+    maven("https://repo.catnies.top/snapshots/")
+}
+```
+```kotlin
+dependencies {
+    compileOnly("top.catnies:firOnlineTime:1.0.7")
+}
+```
