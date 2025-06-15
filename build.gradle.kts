@@ -2,10 +2,12 @@ plugins {
     kotlin("jvm") version "2.0.20" // Kotlin
     id("com.github.johnrengelman.shadow") version "8.1.1" // Shadow
     id("xyz.jpenilla.run-paper") version "2.3.1" // Run Paper
+    id("maven-publish") // Maven Publish
 }
 
 group = "top.catnies"
 version = "1.0.7"
+kotlin.jvmToolchain(21)
 
 repositories {
     mavenCentral()
@@ -27,19 +29,11 @@ dependencies {
     compileOnly("me.clip:placeholderapi:2.11.6") // PlaceholderAPI
 }
 
-val targetJavaVersion = 21
-kotlin {
-    jvmToolchain(targetJavaVersion)
-}
-
 tasks{
     build {
         dependsOn("shadowJar")
     }
     runServer {
-        // Configure the Minecraft version for our task.
-        // This is the only required configuration besides applying the plugin.
-        // Your plugin's jar (or shadowJar if present) will be used automatically.
         minecraftVersion("1.21.4")
     }
 }
@@ -50,5 +44,27 @@ tasks.processResources {
     filteringCharset = "UTF-8"
     filesMatching("plugin.yml") {
         expand(props)
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            isAllowInsecureProtocol = true
+            name = "Catnies"
+            url = uri("http://repo.catnies.top/snapshots")
+            credentials(PasswordCredentials::class)
+            authentication {
+                create<BasicAuthentication>("basic")
+            }
+        }
+    }
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "top.catnies"
+            artifactId = "firOnlineTime"
+            version = "1.0.5"
+            from(components["java"])
+        }
     }
 }

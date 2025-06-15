@@ -68,3 +68,4 @@ gradle-app.setting
 ## File-based project format:
 *.ipr
 *.iws
+/run/
