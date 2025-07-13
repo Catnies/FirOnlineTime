@@ -91,10 +91,8 @@ class SqliteDatabase private constructor() : Database {
                             statement.setDate(2, TimeUtil.getMonthStart(baseDate))
                             statement.setDate(3, TimeUtil.getMonthEnd(baseDate))
                         }
-                        QueryType.TOTAL -> {
-                            statement.setDate(2, TimeUtil.getMonthStart(baseDate))
-                            statement.setDate(3, TimeUtil.getMonthEnd(baseDate))
-                        }
+                        // FIX: TOTAL 查询不再需要Date范围，把Filter去掉
+                        QueryType.TOTAL -> {}
                     }
                     // 查询
                     val resultSet = statement.executeQuery()
@@ -113,38 +111,48 @@ class SqliteDatabase private constructor() : Database {
     // 更新单个玩家的数据库在线时间数据
     override fun saveAndRefreshOnlineCache(player: OfflinePlayer, systemNow: Long) {
         val data = DataCacheManager.instance.onlineCache[player.uniqueId] ?: return
-        val expire = TimeUtil.isExpire(data.lastSavedTime!!)
+        // lastSavedTime 不可能为 null，如果玩家在线，它在加入时就会被初始化
+        val lastSaveTime = data.lastSavedTime!!
+        val expire = TimeUtil.isExpire(lastSaveTime)
 
         // 如果缓存过期了, 代表已经跨日期了, 需要分割
         if (expire) {
-            val boundary: Long = TimeUtil.getTomorrowStartByTimeMillisStamp(data.lastSavedTime!!)
-            val yesterdayPart = boundary - data.lastSavedTime!!
-            val yesterdayDate = Date(data.lastSavedTime!!)
+            val boundary: Long = TimeUtil.getTomorrowStartByTimeMillisStamp(lastSaveTime)
+            val yesterdayPart = boundary - lastSaveTime
+            val yesterdayDate = Date(lastSaveTime)
             val todayPart = systemNow - boundary
             val todayDate = TimeUtil.getNowSQLDate()
 
             // 把最新的数据保存到数据库中
-            upsertOnlineTime(player, yesterdayDate, yesterdayPart)
-            upsertOnlineTime(player, todayDate, todayPart)
+            // 只有当这些部分大于0时才保存，避免无效的数据库写入
+            if (yesterdayPart > 0) upsertOnlineTime(player, yesterdayDate, yesterdayPart)
+            if (todayPart > 0) upsertOnlineTime(player, todayDate, todayPart)
 
-            // 重新获取从数据库中获取数据, 刷新当前缓存
+            // FIX 1: Synchronized重置今日在线时间缓存为新一天的部分
+            data.savedTodayOnlineTime = todayPart
+            // FIX 2: Synchronized更新最后保存时间戳，防止下次保存时重复进入此逻辑块
+            data.lastSavedTime = systemNow
+            data.dataRefreshTime = systemNow
+
+            // FIX 3: Async刷新其他数据{周、月、总}
             Bukkit.getScheduler().runTaskAsynchronously(FirOnlineTime.instance!!, Runnable {
+                // 这里的 saveAndRefreshCache 应该被设计为刷新{周、月、总榜}数据
                 data.saveAndRefreshCache()
-                data.lastSavedTime = systemNow
-                data.dataRefreshTime = systemNow
             })
         }
-
-        // 如果缓存没有过期, 则直接更新
+        // 如果缓存没有过期, 则直接Update
         else {
-            val todayPart = systemNow - data.lastSavedTime!!
+            val sessionTime = systemNow - lastSaveTime
+            // 如果时间差小于等于0，说明系统时间可能被回调，或者这是一个无效的保存周期，直接滚蛋
+            if (sessionTime <= 0) return
+
             val todayDate = TimeUtil.getNowSQLDate()
 
             // 把最新的数据保存到数据库中
-            upsertOnlineTime(player, todayDate, todayPart)
+            upsertOnlineTime(player, todayDate, sessionTime)
 
-            // 更新缓存中的最后上线时间戳, 今日在线时间
-            data.savedTodayOnlineTime += todayPart
+            // 更新缓存中的今日在线时间和最后保存时间戳
+            data.savedTodayOnlineTime += sessionTime
             data.lastSavedTime = systemNow
             data.dataRefreshTime = systemNow
         }
