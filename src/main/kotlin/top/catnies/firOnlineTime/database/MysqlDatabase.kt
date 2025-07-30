@@ -92,7 +92,13 @@ class MysqlDatabase private constructor() : Database{
         val uuid = player.uniqueId.toString()
         try {
             mysql.connection.use { connection ->
-                val sql = "SELECT onlineTime FROM $tableName WHERE uuid = ? and date BETWEEN ? AND ?"
+                // 根据查询类型动态构建SQL
+                val sql = if (queryType == QueryType.TOTAL) {
+                    "SELECT onlineTime FROM $tableName WHERE uuid = ?"
+                } else {
+                    "SELECT onlineTime FROM $tableName WHERE uuid = ? AND date BETWEEN ? AND ?"
+                }
+
                 connection.prepareStatement(sql).use { statement ->
                     statement.setString(1, uuid)
                     // 指定date范围
