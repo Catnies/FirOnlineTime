@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "top.catnies"
-version = "1.0.7"
+version = "1.0.8"
 kotlin.jvmToolchain(21)
 
 repositories {
@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21.5-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.21.8-R0.1-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     compileOnly("com.zaxxer:HikariCP:5.1.0") // Hikari CP
@@ -32,9 +32,6 @@ dependencies {
 tasks{
     build {
         dependsOn("shadowJar")
-    }
-    runServer {
-        minecraftVersion("1.21.4")
     }
 }
 
