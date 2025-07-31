@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "top.catnies"
-version = "1.0.8"
+version = "1.0.9"
 kotlin.jvmToolchain(21)
 
 repositories {
@@ -50,7 +50,7 @@ publishing {
         maven {
             isAllowInsecureProtocol = true
             name = "Catnies"
-            url = uri("http://repo.catnies.top/snapshots")
+            url = uri("http://repo.catnies.top/releases")
             credentials(PasswordCredentials::class)
             authentication {
                 create<BasicAuthentication>("basic")
@@ -61,7 +61,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "top.catnies"
             artifactId = "firOnlineTime"
-            version = "1.0.5"
+            version = "1.0.9"
             from(components["java"])
         }
     }

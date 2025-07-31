@@ -42,11 +42,11 @@ FirOnlineTime 是一款轻量化便携性的Bukkit在线统计插件。其支持
 ## 📚 插件 API
 ```kotlin
 repositories {
-    maven("https://repo.catnies.top/snapshots/")
+    maven("https://repo.catnies.top/releases/")
 }
 ```
 ```kotlin
 dependencies {
-    compileOnly("top.catnies:firOnlineTime:1.0.7")
+    compileOnly("top.catnies:firOnlineTime:1.0.9")
 }
 ```
