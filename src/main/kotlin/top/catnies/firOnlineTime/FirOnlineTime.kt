@@ -8,12 +8,14 @@ import top.catnies.firOnlineTime.listeners.PlayerConnectionListener
 import top.catnies.firOnlineTime.managers.DataCacheManager
 import top.catnies.firOnlineTime.managers.DatabaseManager
 import top.catnies.firOnlineTime.managers.SettingsManager
+import kotlin.properties.Delegates
 
 class FirOnlineTime : JavaPlugin() {
 
     companion object {
-        @JvmField
-        var instance: FirOnlineTime? = null
+        @JvmStatic
+        var instance by Delegates.notNull<FirOnlineTime>()
+            private set
     }
 
     override fun onEnable() {

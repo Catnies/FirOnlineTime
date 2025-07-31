@@ -5,6 +5,7 @@ import org.bukkit.OfflinePlayer
 import top.catnies.firOnlineTime.FirOnlineTime
 import top.catnies.firOnlineTime.managers.DataCacheManager
 import top.catnies.firOnlineTime.managers.SettingsManager
+import top.catnies.firOnlineTime.utils.TaskUtils
 import top.catnies.firOnlineTime.utils.TimeUtil
 import java.sql.Date
 import java.sql.DriverManager
@@ -141,10 +142,10 @@ class SqliteDatabase private constructor() : Database {
             data.dataRefreshTime = systemNow
 
             // FIX 3: Async刷新其他数据{周、月、总}
-            Bukkit.getScheduler().runTaskAsynchronously(FirOnlineTime.instance!!, Runnable {
+            TaskUtils.runAsyncTask {
                 // 这里的 saveAndRefreshCache 应该被设计为刷新{周、月、总榜}数据
                 data.saveAndRefreshCache()
-            })
+            }
         }
         // 如果缓存没有过期, 则直接Update
         else {

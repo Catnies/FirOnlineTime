@@ -17,7 +17,7 @@ repositories {
     maven("https://oss.sonatype.org/content/groups/public/") {
         name = "sonatype"
     }
-
+    maven("https://maven.chengzhimeow.cn/releases") // ChengZhiMeow
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") // PlaceholderAPI
 }
 
@@ -26,6 +26,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     compileOnly("com.zaxxer:HikariCP:5.1.0") // Hikari CP
+    compileOnly("cn.chengzhiya:MHDF-Scheduler:1.0.1") // Scheduler
     compileOnly("me.clip:placeholderapi:2.11.6") // PlaceholderAPI
 }
 

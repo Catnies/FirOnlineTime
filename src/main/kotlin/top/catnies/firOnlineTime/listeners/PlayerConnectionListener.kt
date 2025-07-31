@@ -9,6 +9,7 @@ import top.catnies.firOnlineTime.FirOnlineTime
 import top.catnies.firOnlineTime.database.PlayerData
 import top.catnies.firOnlineTime.managers.DataCacheManager
 import top.catnies.firOnlineTime.managers.DatabaseManager
+import top.catnies.firOnlineTime.utils.TaskUtils
 
 class PlayerConnectionListener private constructor(): Listener {
 
@@ -25,10 +26,10 @@ class PlayerConnectionListener private constructor(): Listener {
      */
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
-        Bukkit.getScheduler().runTaskAsynchronously(FirOnlineTime.instance!!, Runnable {
+        TaskUtils.runAsyncTask {
             DataCacheManager.instance.offlineCache.remove(event.player.uniqueId)
             DataCacheManager.instance.onlineCache[event.player.uniqueId] = PlayerData.createOnlineData(event.player, System.currentTimeMillis())
-        })
+        }
     }
 
 
@@ -37,10 +38,10 @@ class PlayerConnectionListener private constructor(): Listener {
      */
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
-        Bukkit.getScheduler().runTaskAsynchronously(FirOnlineTime.instance!!, Runnable {
+        TaskUtils.runAsyncTask {
             database.saveAndRefreshOnlineCache(player = event.player, systemNow = System.currentTimeMillis())
             DataCacheManager.instance.onlineCache.remove(event.player.uniqueId)
-        })
+        }
     }
 
 }

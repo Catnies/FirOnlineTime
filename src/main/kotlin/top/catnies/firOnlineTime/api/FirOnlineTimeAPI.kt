@@ -7,6 +7,7 @@ import top.catnies.firOnlineTime.database.MysqlDatabase
 import top.catnies.firOnlineTime.database.PlayerData
 import top.catnies.firOnlineTime.database.QueryType
 import top.catnies.firOnlineTime.managers.DataCacheManager
+import top.catnies.firOnlineTime.utils.TaskUtils
 import java.sql.Date
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -51,10 +52,10 @@ object FirOnlineTimeAPI {
      */
     fun getPlayerOnlineTimeAsync(player: OfflinePlayer, type: QueryType, baseDate: Date): CompletableFuture<Long> {
         val future = CompletableFuture<Long>()
-        Bukkit.getScheduler().runTaskAsynchronously (FirOnlineTime.instance!!, Runnable {
+        TaskUtils.runAsyncTask {
             val playerData = MysqlDatabase.instance.queryPlayerData(player, baseDate, type)
             future.complete(playerData)
-        } )
+        }
         return future.orTimeout(5, TimeUnit.SECONDS)
     }
 
