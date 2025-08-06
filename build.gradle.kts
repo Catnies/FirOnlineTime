@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "top.catnies"
-version = "1.0.9"
+version = "1.0.10"
 kotlin.jvmToolchain(21)
 
 repositories {
@@ -61,7 +61,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "top.catnies"
             artifactId = "firOnlineTime"
-            version = "1.0.9"
+            version = project.version.toString()
             from(components["java"])
         }
     }
