@@ -7,7 +7,7 @@ import kotlin.properties.Delegates
 
 class DatabaseManager private constructor(){
 
-    var database: Database by Delegates.notNull<Database>()
+    var database: Database by Delegates.notNull()
 
     companion object {
         val instance: DatabaseManager by lazy { DatabaseManager().apply { reload() } }

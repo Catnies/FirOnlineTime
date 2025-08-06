@@ -17,6 +17,11 @@ open class PlayerData private constructor(
     var savedMonthOnlineTime: Long,
     var savedTotalOnlineTime: Long,
 
+    var savedTodayOnlineDays: Int,
+    var savedWeekOnlineDays: Int,
+    var savedMonthOnlineDays: Int,
+    var savedTotalOnlineDays: Int,
+
     var dataRefreshTime: Long
 ) {
 
@@ -36,6 +41,11 @@ open class PlayerData private constructor(
                 database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH),
                 database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL),
 
+                database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.TODAY),
+                database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.WEEK),
+                database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.MONTH),
+                database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL),
+
                 System.currentTimeMillis()
             )
             return data
@@ -53,6 +63,11 @@ open class PlayerData private constructor(
                 database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK),
                 database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH),
                 database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL),
+
+                database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.TODAY),
+                database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.WEEK),
+                database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.MONTH),
+                database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL),
 
                 System.currentTimeMillis()
             )
@@ -79,6 +94,11 @@ open class PlayerData private constructor(
             savedWeekOnlineTime = database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.WEEK)
             savedMonthOnlineTime = database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.MONTH)
             savedTotalOnlineTime = database.queryPlayerData(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL)
+
+            savedTodayOnlineDays = database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.TODAY)
+            savedWeekOnlineDays = database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.WEEK)
+            savedMonthOnlineDays = database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.MONTH)
+            savedTotalOnlineDays = database.queryOnlineDays(player, TimeUtil.getNowSQLDate(), QueryType.TOTAL)
             dataRefreshTime = System.currentTimeMillis()
         }
         // 在线缓存刷新, 需要计算出昨日的在线时间和今日在线时间, 然后保存到数据库中.

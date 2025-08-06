@@ -128,11 +128,73 @@ class MysqlDatabase private constructor() : Database{
                 }
             }
         } catch (e: SQLException) {
-            FirOnlineTime.instance!!.logger.severe("在线时间-查询玩家数据时发生错误: $e")
+            FirOnlineTime.instance.logger.severe("在线时间-查询玩家数据时发生错误: $e")
         }
         return 0L
     }
 
+    // 根据传入的日期查询期间在线日期数
+    override fun queryOnlineDays(player: OfflinePlayer, baseDate: Date, queryType: QueryType): Int {
+        val uuid = player.uniqueId.toString()
+        return try {
+            mysql.connection.use { connection ->
+                // 基础查询模板
+                val sqlTemplate = when (queryType) {
+                    QueryType.TOTAL -> "SELECT COUNT(DISTINCT date) FROM $tableName WHERE uuid = ?"
+                    else -> "SELECT COUNT(DISTINCT date) FROM $tableName WHERE uuid = ? AND date BETWEEN ? AND ?"
+                }
+
+                connection.prepareStatement(sqlTemplate).use { statement ->
+                    statement.setString(1, uuid)
+
+                    // 设置日期范围参数
+                    if (queryType != QueryType.TOTAL) {
+                        val (start, end) = when (queryType) {
+                            QueryType.TODAY -> TimeUtil.getNowSQLDate() to TimeUtil.getNowSQLDate()
+                            QueryType.WEEK -> TimeUtil.getWeekStart(baseDate) to TimeUtil.getWeekEnd(baseDate)
+                            QueryType.MONTH -> TimeUtil.getMonthStart(baseDate) to TimeUtil.getMonthEnd(baseDate)
+                            else -> throw IllegalArgumentException("无效的查询类型")
+                        }
+                        statement.setDate(2, start)
+                        statement.setDate(3, end)
+                    }
+
+                    // 执行查询并返回结果
+                    val resultSet = statement.executeQuery()
+                    if (resultSet.next()) resultSet.getInt(1) else 0
+                }
+            }
+        } catch (e: SQLException) {
+            FirOnlineTime.instance.logger.severe("在线日期数查询失败: ${e.message}")
+            0
+        } catch (e: IllegalArgumentException) {
+            FirOnlineTime.instance.logger.warning("无效的查询类型: $queryType")
+            0
+        }
+    }
+
+    // 根据传入的日期查询期间在线日期数
+    override fun queryOnlineDays(player: OfflinePlayer, startDate: Date, endDate: Date): Int {
+        val uuid = player.uniqueId.toString()
+        return try {
+            mysql.connection.use { connection ->
+                // 固定语法：查询指定日期范围内的不同日期计数
+                val sql = "SELECT COUNT(DISTINCT date) FROM $tableName WHERE uuid = ? AND date BETWEEN ? AND ?"
+
+                connection.prepareStatement(sql).use { statement ->
+                    statement.setString(1, uuid)
+                    statement.setDate(2, startDate)  // 起点日期
+                    statement.setDate(3, endDate)    // 终点日期
+
+                    val resultSet = statement.executeQuery()
+                    if (resultSet.next()) resultSet.getInt(1) else 0
+                }
+            }
+        } catch (e: SQLException) {
+            FirOnlineTime.instance.logger.severe("在线日期数查询失败: ${e.message}")
+            0
+        }
+    }
 
     // 更新单个玩家的数据库在线时间数据
     override fun saveAndRefreshOnlineCache(player: OfflinePlayer, systemNow: Long) {
@@ -181,6 +243,11 @@ class MysqlDatabase private constructor() : Database{
             data.savedTodayOnlineTime += sessionTime
             data.lastSavedTime = systemNow
             data.dataRefreshTime = systemNow
+
+            data.savedTodayOnlineTime = queryPlayerData(player, todayDate, QueryType.TODAY)
+            data.savedWeekOnlineDays = queryOnlineDays(player, todayDate, QueryType.WEEK)
+            data.savedMonthOnlineDays = queryOnlineDays(player, todayDate, QueryType.MONTH)
+            data.savedTotalOnlineDays = queryOnlineDays(player, todayDate, QueryType.TOTAL)
         }
     }
 

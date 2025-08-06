@@ -30,6 +30,9 @@ class FirOnlineTimePlaceholder private constructor() : PlaceholderExpansion() {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TODAY)
                 return onlineTime.toString()
             }
+            "today_days" -> {
+                return FirOnlineTimeAPI.getPlayerOnlineDays(player, QueryType.TODAY).toString()
+            }
             // 当周
             "week" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.WEEK)
@@ -38,6 +41,9 @@ class FirOnlineTimePlaceholder private constructor() : PlaceholderExpansion() {
             "week_value" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.WEEK)
                 return onlineTime.toString()
+            }
+            "week_days" -> {
+                return FirOnlineTimeAPI.getPlayerOnlineDays(player, QueryType.WEEK).toString()
             }
             // 当月
             "month" -> {
@@ -48,6 +54,9 @@ class FirOnlineTimePlaceholder private constructor() : PlaceholderExpansion() {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.MONTH)
                 return onlineTime.toString()
             }
+            "month_days" -> {
+                return FirOnlineTimeAPI.getPlayerOnlineDays(player, QueryType.MONTH).toString()
+            }
             // 总
             "total" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TOTAL)
@@ -56,6 +65,9 @@ class FirOnlineTimePlaceholder private constructor() : PlaceholderExpansion() {
             "total_value" -> {
                 val onlineTime = FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TOTAL)
                 return onlineTime.toString()
+            }
+            "total_days" -> {
+                return FirOnlineTimeAPI.getPlayerOnlineDays(player, QueryType.TOTAL).toString()
             }
         }
         return null

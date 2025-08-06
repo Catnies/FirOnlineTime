@@ -27,16 +27,20 @@ FirOnlineTime 是一款轻量化便携性的Bukkit在线统计插件。其支持
 ```
 您可以使用 [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245)  插件来获取玩家的在线时间。
 
-| 占位符                 | 说明 |
-|---------------------| --- |
-| `%fotime_today%`    | 当日玩家的在线时间 |
-| `%fotime_week%`     | 本周玩家的在线时间 |
-| `%fotime_month%`    | 本月玩家的在线时间 |
-| `%fotime_total%`    | 玩家的总在线时间 |
-| `%fotime_today_value%` | 当日玩家的在线时间的毫秒时间戳 |
-| `%fotime_week_value%` | 本周玩家的在线时间的毫秒时间戳 |
-| `%fotime_month_value%` | 本月玩家的在线时间的毫秒时间戳 |
-| `%fotime_total_value%` | 玩家的总在线时间的毫秒时间戳 |
+| 占位符                    | 说明             |
+|------------------------|----------------|
+| `%fotime_today%`       | 当日玩家的在线时间      |
+| `%fotime_week%`        | 本周玩家的在线时间      |
+| `%fotime_month%`       | 本月玩家的在线时间      |
+| `%fotime_total%`       | 玩家的总共在线时间      |
+| `%fotime_today_value%` | 当日玩家的在线时间的毫秒时间 |
+| `%fotime_week_value%`  | 本周玩家的在线时间的毫秒时间 |
+| `%fotime_month_value%` | 本月玩家的在线时间的毫秒时间 |
+| `%fotime_total_value%` | 玩家的总共在线时间的毫秒时间 |
+| `%fotime_today_days%`  | 玩家当日的在线日期数     |
+| `%fotime_week_days%`   | 玩家本周的在线日期数     |
+| `%fotime_month_days%`  | 玩家本月的在线日期数     |
+| `%fotime_total_days%`  | 玩家总共的在线日期数     |
 <br />
       
 ## 📚 插件 API

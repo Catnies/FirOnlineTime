@@ -7,7 +7,9 @@ import top.catnies.firOnlineTime.database.MysqlDatabase
 import top.catnies.firOnlineTime.database.PlayerData
 import top.catnies.firOnlineTime.database.QueryType
 import top.catnies.firOnlineTime.managers.DataCacheManager
+import top.catnies.firOnlineTime.managers.DatabaseManager
 import top.catnies.firOnlineTime.utils.TaskUtils
+import top.catnies.firOnlineTime.utils.TimeUtil
 import java.sql.Date
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -43,7 +45,20 @@ object FirOnlineTimeAPI {
      * 获取玩家的在线时长, 同步阻塞获取
      */
     fun getPlayerOnlineTime(player: OfflinePlayer, type: QueryType, baseDate: Date): Long {
-        return MysqlDatabase.instance.queryPlayerData(player, baseDate, type)
+        return DatabaseManager.instance.database.queryPlayerData(player, baseDate, type)
+    }
+
+
+    /**
+     * 获取玩家当日周月总的在线日期数量
+     * 检查玩家这段时间一共登录了多少天;
+     */
+    fun getPlayerOnlineDays(player: OfflinePlayer, type: QueryType): Int {
+        val baseDate = TimeUtil.getNowSQLDate()
+        return DatabaseManager.instance.database.queryOnlineDays(player, baseDate, type)
+    }
+    fun getPlayerOnlineDays(player: OfflinePlayer, type: QueryType, baseDate: Date): Int {
+        return DatabaseManager.instance.database.queryOnlineDays(player, baseDate, type)
     }
 
 
@@ -53,7 +68,7 @@ object FirOnlineTimeAPI {
     fun getPlayerOnlineTimeAsync(player: OfflinePlayer, type: QueryType, baseDate: Date): CompletableFuture<Long> {
         val future = CompletableFuture<Long>()
         TaskUtils.runAsyncTask {
-            val playerData = MysqlDatabase.instance.queryPlayerData(player, baseDate, type)
+            val playerData = DatabaseManager.instance.database.queryPlayerData(player, baseDate, type)
             future.complete(playerData)
         }
         return future.orTimeout(5, TimeUnit.SECONDS)

@@ -9,6 +9,10 @@ interface Database {
 
     fun queryPlayerData(player: OfflinePlayer, baseDate: Date, queryType: QueryType): Long
 
+    fun queryOnlineDays(player: OfflinePlayer, baseDate: Date, queryType: QueryType): Int
+
+    fun queryOnlineDays(player: OfflinePlayer, startDate: Date, endDate: Date): Int
+
     fun saveAndRefreshOnlineCache(player: OfflinePlayer, systemNow: Long = System.currentTimeMillis())
 
 }
