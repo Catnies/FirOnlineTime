@@ -6,8 +6,8 @@ plugins {
 }
 
 group = "top.catnies"
-version = "1.0.10"
-kotlin.jvmToolchain(21)
+version = "1.0.11"
+kotlin.jvmToolchain(17)
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21.8-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     compileOnly("com.zaxxer:HikariCP:5.1.0") // Hikari CP
