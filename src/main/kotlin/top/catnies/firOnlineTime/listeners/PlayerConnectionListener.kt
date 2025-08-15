@@ -15,33 +15,28 @@ class PlayerConnectionListener private constructor(): Listener {
 
     companion object {
         val database = DatabaseManager.instance.database
-        val instance: PlayerConnectionListener by lazy { PlayerConnectionListener().apply {
-            Bukkit.getServer().pluginManager.registerEvents(this, FirOnlineTime.instance!!)
-        } }
+        val instance: PlayerConnectionListener by lazy {
+            PlayerConnectionListener().apply {
+                Bukkit.getServer().pluginManager.registerEvents(this, FirOnlineTime.instance)
+            }
+        }
     }
 
-
-    /**
-     * 玩家登录时, 移除服务器内的离线缓存; 创建新的在线缓存.
-     */
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
         TaskUtils.runAsyncTask {
             DataCacheManager.instance.offlineCache.remove(event.player.uniqueId)
-            DataCacheManager.instance.onlineCache[event.player.uniqueId] = PlayerData.createOnlineData(event.player, System.currentTimeMillis())
+            DataCacheManager.instance.onlineCache[event.player.uniqueId] =
+                PlayerData.createOnlineData(event.player, System.currentTimeMillis())
         }
     }
 
-
-    /**
-     * 玩家退出时, 保存数据, 然后移除服务器内的在线缓存;
-     */
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         TaskUtils.runAsyncTask {
+            // 通过数据库任务队列保存数据
             database.saveAndRefreshOnlineCache(player = event.player, systemNow = System.currentTimeMillis())
             DataCacheManager.instance.onlineCache.remove(event.player.uniqueId)
         }
     }
-
 }
