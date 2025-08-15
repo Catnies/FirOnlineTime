@@ -251,4 +251,15 @@ class MysqlDatabase private constructor() : Database{
         }
     }
 
+    fun close() {
+        try {
+            if (::mysql.isInitialized && !mysql.isClosed) {
+                mysql.close()
+                FirOnlineTime.instance.logger.info("MySQL 连接池已关闭")
+            }
+        } catch (e: Exception) {
+            FirOnlineTime.instance.logger.warning("关闭MySQL连接池时出错: ${e.message}")
+        }
+    }
+
 }
