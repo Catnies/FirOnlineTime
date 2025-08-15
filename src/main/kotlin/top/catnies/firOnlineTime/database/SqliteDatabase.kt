@@ -11,27 +11,67 @@ import java.sql.Connection
 import java.sql.Date
 import java.sql.DriverManager
 import java.sql.SQLException
-import kotlin.use
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 
 class SqliteDatabase private constructor() : Database {
 
     private var url: String = "jdbc:sqlite:plugins/FirOnlineTime/database.db"
     private val tableName: String = SettingsManager.instance.TABLE_NAME
-    lateinit var connection: Connection
+    private lateinit var connection: Connection
+    private val connectionLock = Any()
 
     companion object {
-        val instance: SqliteDatabase by lazy { SqliteDatabase().apply {
-            connection = DriverManager.getConnection(url)
-            createTable()
-        } }
+        val instance: SqliteDatabase by lazy {
+            SqliteDatabase().apply {
+                // 初始化连接使用任务队列确保线程安全
+                DatabaseTaskQueue.submitTask("初始化SQLite连接") {
+                    synchronized(connectionLock) {
+                        if (!::connection.isInitialized || connection.isClosed) {
+                            reconnect()
+                        }
+                    }
+                    createTable()
+                }.get(10, TimeUnit.SECONDS)
+            }
+        }
+    }
+
+    // 重新连接数据库
+    private fun reconnect() {
+        synchronized(connectionLock) {
+            try {
+                if (::connection.isInitialized && !connection.isClosed) {
+                    connection.close()
+                }
+                connection = DriverManager.getConnection(url)
+                FirOnlineTime.instance.logger.info("SQLite 数据库已重新连接")
+            } catch (e: SQLException) {
+                FirOnlineTime.instance.logger.severe("重新连接SQLite数据库失败: ${e.message}")
+                throw e
+            }
+        }
+    }
+
+    // 确保连接有效（带自动重连）
+    private fun ensureConnection(): Connection {
+        return synchronized(connectionLock) {
+            if (!::connection.isInitialized || connection.isClosed || !connection.isValid(1)) {
+                FirOnlineTime.instance.logger.warning("数据库连接无效，尝试重新连接...")
+                reconnect()
+            }
+            connection
+        }
     }
 
     // 建表函数
     fun createTable() {
-        try {
-            connection.use { connection ->
-                connection.prepareStatement(
+        DatabaseTaskQueue.submitTask("创建表") {
+            try {
+                val conn = ensureConnection()
+                conn.prepareStatement(
                     """
                     CREATE TABLE IF NOT EXISTS $tableName (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -39,56 +79,63 @@ class SqliteDatabase private constructor() : Database {
                     date Date NOT NULL, 
                     onlineTime BIGINT NOT NULL,
                     UNIQUE(uuid, date))
-                    """
-                        .trimIndent()
+                    """.trimIndent()
                 ).use { statement ->
                     statement.execute()
                 }
+                FirOnlineTime.instance.logger.info("SQLite 表已创建/验证")
+            } catch (e: SQLException) {
+                FirOnlineTime.instance.logger.severe("建表时发生错误: $e")
+                throw e
             }
-        } catch (e: SQLException) {
-            FirOnlineTime.instance.logger.severe("建表时发生错误: $e")
+        }.exceptionally { e ->
+            FirOnlineTime.instance.logger.severe("创建表任务失败: ${e.message}")
+            null
         }
     }
 
     // 插入 onlineTime 数据或使 onlineTime 增加
     override fun upsertOnlineTime(player: OfflinePlayer, date: Date, addTime: Long) {
-        val uuid = player.uniqueId.toString()
-        try {
-            connection.use { connection ->
-                // 与Mysql不同, Sqlite不支持ON DUPLICATE KEY UPDATE
+        DatabaseTaskQueue.submitTask("更新在线时间") {
+            val uuid = player.uniqueId.toString()
+            try {
+                val conn = ensureConnection()
                 val sql = """
                 INSERT INTO $tableName (uuid, date, onlineTime)
                 VALUES (?, ?, ?)
                 ON CONFLICT(uuid, date) DO UPDATE SET
                 onlineTime = onlineTime + excluded.onlineTime
                 """.trimIndent()
-                connection.prepareStatement(sql).use { statement ->
+                conn.prepareStatement(sql).use { statement ->
                     statement.setString(1, uuid)
-                    statement.setDate(2, java.sql.Date(date.time))  // 修正 Date 类型转换
+                    statement.setDate(2, java.sql.Date(date.time))
                     statement.setLong(3, addTime)
                     statement.execute()
                 }
+            } catch (e: SQLException) {
+                FirOnlineTime.instance.logger.severe("在线时间-插入/更新数据时发生错误: $e")
+                throw e
             }
-        } catch (e: SQLException) {
-            FirOnlineTime.instance!!.logger.severe("在线时间-插入/更新数据时发生错误: $e")
+        }.exceptionally { e ->
+            FirOnlineTime.instance.logger.severe("更新在线时间任务失败: ${e.message}")
+            null
         }
     }
 
     // 查询玩家数据
     override fun queryPlayerData(player: OfflinePlayer, baseDate: Date, queryType: QueryType): Long {
-        val uuid = player.uniqueId.toString()
-        try {
-            connection.use { connection ->
-                // 根据查询类型动态构建SQL
+        return DatabaseTaskQueue.submitTask("查询玩家数据") {
+            val uuid = player.uniqueId.toString()
+            try {
+                val conn = ensureConnection()
                 val sql = if (queryType == QueryType.TOTAL) {
                     "SELECT onlineTime FROM $tableName WHERE uuid = ?"
                 } else {
                     "SELECT onlineTime FROM $tableName WHERE uuid = ? AND date BETWEEN ? AND ?"
                 }
 
-                connection.prepareStatement(sql).use { statement ->
+                conn.prepareStatement(sql).use { statement ->
                     statement.setString(1, uuid)
-                    // 指定date范围
                     when (queryType) {
                         QueryType.TODAY -> {
                             statement.setDate(2, TimeUtil.getNowSQLDate())
@@ -102,39 +149,35 @@ class SqliteDatabase private constructor() : Database {
                             statement.setDate(2, TimeUtil.getMonthStart(baseDate))
                             statement.setDate(3, TimeUtil.getMonthEnd(baseDate))
                         }
-                        // FIX: TOTAL 查询不再需要Date范围，把Filter去掉
                         QueryType.TOTAL -> {}
                     }
-                    // 查询
                     val resultSet = statement.executeQuery()
 
                     var sum = 0L
                     while (resultSet.next()) sum += resultSet.getLong(1)
-                    return sum
+                    sum
                 }
+            } catch (e: SQLException) {
+                FirOnlineTime.instance.logger.severe("在线时间-查询玩家数据时发生错误: $e")
+                throw e
             }
-        } catch (e: SQLException) {
-            FirOnlineTime.instance!!.logger.severe("在线时间-查询玩家数据时发生错误: $e")
-        }
-        return 0L
+        }.get(5, TimeUnit.SECONDS) ?: 0L
     }
 
     // 根据传入的日期查询在线日期数
     override fun queryOnlineDays(player: OfflinePlayer, baseDate: Date, queryType: QueryType): Int {
-        val uuid = player.uniqueId.toString()
-        return try {
-            connection.use { connection ->
-                // 基础查询模板
+        return DatabaseTaskQueue.submitTask("查询在线天数") {
+            val uuid = player.uniqueId.toString()
+            try {
+                val conn = ensureConnection()
                 val sqlTemplate = when (queryType) {
                     QueryType.TOTAL -> "SELECT COUNT(DISTINCT date) FROM $tableName WHERE uuid = ?"
                     else -> "SELECT COUNT(DISTINCT date) FROM $tableName WHERE uuid = ? AND date BETWEEN ? AND ?"
                 }
 
-
-                connection.prepareStatement(sqlTemplate).use { statement ->
+                conn.prepareStatement(sqlTemplate).use { statement ->
                     statement.setString(1, uuid)
 
-                    // 设置日期范围参数
                     if (queryType != QueryType.TOTAL) {
                         val (start, end) = when (queryType) {
                             QueryType.TODAY -> TimeUtil.getNowSQLDate() to TimeUtil.getNowSQLDate()
@@ -146,91 +189,95 @@ class SqliteDatabase private constructor() : Database {
                         statement.setDate(3, end)
                     }
 
-                    // 执行查询并返回结果
                     val resultSet = statement.executeQuery()
                     if (resultSet.next()) resultSet.getInt(1) else 0
                 }
+            } catch (e: SQLException) {
+                FirOnlineTime.instance.logger.severe("在线日期数查询失败: ${e.message}")
+                throw e
+            } catch (e: IllegalArgumentException) {
+                FirOnlineTime.instance.logger.warning("无效的查询类型: $queryType")
+                throw e
             }
-        } catch (e: SQLException) {
-            FirOnlineTime.instance.logger.severe("在线日期数查询失败: ${e.message}")
-            0
-        } catch (e: IllegalArgumentException) {
-            FirOnlineTime.instance.logger.warning("无效的查询类型: $queryType")
-            0
-        }
+        }.get(5, TimeUnit.SECONDS) ?: 0
     }
 
     // 根据传入的日期查询期间在线日期数
     override fun queryOnlineDays(player: OfflinePlayer, startDate: Date, endDate: Date): Int {
-        val uuid = player.uniqueId.toString()
-        return try {
-            connection.use { connection ->
-                // 固定语法：查询指定日期范围内的不同日期计数
+        return DatabaseTaskQueue.submitTask("查询日期范围在线天数") {
+            val uuid = player.uniqueId.toString()
+            try {
+                val conn = ensureConnection()
                 val sql = "SELECT COUNT(DISTINCT date) FROM $tableName WHERE uuid = ? AND date BETWEEN ? AND ?"
 
-                connection.prepareStatement(sql).use { statement ->
+                conn.prepareStatement(sql).use { statement ->
                     statement.setString(1, uuid)
-                    statement.setDate(2, startDate)  // 起点日期
-                    statement.setDate(3, endDate)    // 终点日期
+                    statement.setDate(2, startDate)
+                    statement.setDate(3, endDate)
 
                     val resultSet = statement.executeQuery()
                     if (resultSet.next()) resultSet.getInt(1) else 0
                 }
+            } catch (e: SQLException) {
+                FirOnlineTime.instance.logger.severe("在线日期数查询失败: ${e.message}")
+                throw e
             }
-        } catch (e: SQLException) {
-            FirOnlineTime.instance.logger.severe("在线日期数查询失败: ${e.message}")
-            0
-        }
+        }.get(5, TimeUnit.SECONDS) ?: 0
     }
 
     // 更新单个玩家的数据库在线时间数据
     override fun saveAndRefreshOnlineCache(player: OfflinePlayer, systemNow: Long) {
-        val data = DataCacheManager.instance.onlineCache[player.uniqueId] ?: return
-        // lastSavedTime 不可能为 null，如果玩家在线，它在加入时就会被初始化
-        val lastSaveTime = data.lastSavedTime!!
-        val expire = TimeUtil.isExpire(lastSaveTime)
+        DatabaseTaskQueue.submitTask("保存并刷新缓存") {
+            val data = DataCacheManager.instance.onlineCache[player.uniqueId] ?: return@submitTask
+            val lastSaveTime = data.lastSavedTime!!
+            val expire = TimeUtil.isExpire(lastSaveTime)
 
-        // 如果缓存过期了, 代表已经跨日期了, 需要分割
-        if (expire) {
-            val boundary: Long = TimeUtil.getTomorrowStartByTimeMillisStamp(lastSaveTime)
-            val yesterdayPart = boundary - lastSaveTime
-            val yesterdayDate = Date(lastSaveTime)
-            val todayPart = systemNow - boundary
-            val todayDate = TimeUtil.getNowSQLDate()
+            if (expire) {
+                val boundary: Long = TimeUtil.getTomorrowStartByTimeMillisStamp(lastSaveTime)
+                val yesterdayPart = boundary - lastSaveTime
+                val yesterdayDate = Date(lastSaveTime)
+                val todayPart = systemNow - boundary
+                val todayDate = TimeUtil.getNowSQLDate()
 
-            // 把最新的数据保存到数据库中
-            // 只有当这些部分大于0时才保存，避免无效的数据库写入
-            if (yesterdayPart > 0) upsertOnlineTime(player, yesterdayDate, yesterdayPart)
-            if (todayPart > 0) upsertOnlineTime(player, todayDate, todayPart)
+                if (yesterdayPart > 0) upsertOnlineTime(player, yesterdayDate, yesterdayPart)
+                if (todayPart > 0) upsertOnlineTime(player, todayDate, todayPart)
 
-            // FIX 1: Synchronized重置今日在线时间缓存为新一天的部分
-            data.savedTodayOnlineTime = todayPart
-            // FIX 2: Synchronized更新最后保存时间戳，防止下次保存时重复进入此逻辑块
-            data.lastSavedTime = systemNow
-            data.dataRefreshTime = systemNow
+                data.savedTodayOnlineTime = todayPart
+                data.lastSavedTime = systemNow
+                data.dataRefreshTime = systemNow
 
-            // FIX 3: Async刷新其他数据{周、月、总}
-            TaskUtils.runAsyncTask {
-                // 这里的 saveAndRefreshCache 应该被设计为刷新{周、月、总榜}数据
-                data.saveAndRefreshCache()
+                // 异步刷新其他数据
+                TaskUtils.runAsyncTask {
+                    data.saveAndRefreshCache()
+                }
+            } else {
+                val sessionTime = systemNow - lastSaveTime
+                if (sessionTime <= 0) return@submitTask
+
+                val todayDate = TimeUtil.getNowSQLDate()
+                upsertOnlineTime(player, todayDate, sessionTime)
+
+                data.savedTodayOnlineTime += sessionTime
+                data.lastSavedTime = systemNow
+                data.dataRefreshTime = systemNow
             }
-        }
-        // 如果缓存没有过期, 则直接Update
-        else {
-            val sessionTime = systemNow - lastSaveTime
-            // 如果时间差小于等于0，说明系统时间可能被回调，或者这是一个无效的保存周期，直接滚蛋
-            if (sessionTime <= 0) return
-
-            val todayDate = TimeUtil.getNowSQLDate()
-
-            // 把最新的数据保存到数据库中
-            upsertOnlineTime(player, todayDate, sessionTime)
-
-            // 更新缓存中的今日在线时间和最后保存时间戳
-            data.savedTodayOnlineTime += sessionTime
-            data.lastSavedTime = systemNow
-            data.dataRefreshTime = systemNow
+        }.exceptionally { e ->
+            FirOnlineTime.instance.logger.severe("保存并刷新缓存任务失败: ${e.message}")
+            null
         }
     }
 
+    // 关闭数据库连接
+    fun close() {
+        synchronized(connectionLock) {
+            try {
+                if (::connection.isInitialized && !connection.isClosed) {
+                    connection.close()
+                    FirOnlineTime.instance.logger.info("SQLite 数据库连接已关闭")
+                }
+            } catch (e: SQLException) {
+                FirOnlineTime.instance.logger.warning("关闭SQLite连接时出错: ${e.message}")
+            }
+        }
+    }
 }
