@@ -35,11 +35,11 @@ class MysqlDatabase private constructor() : Database{
             hikariConfig.password = SettingsManager.instance.PASSWORD
             mysql = HikariDataSource(hikariConfig)
 
-            FirOnlineTime.instance!!.logger.info("MySQL 数据库已连接成功！")
+            FirOnlineTime.instance.logger.info("MySQL 数据库已连接成功！")
         } catch (e: Exception) {
-            FirOnlineTime.instance!!.logger.severe("连接 MySQL 数据库时发生错误, 插件将自动关闭:")
+            FirOnlineTime.instance.logger.severe("连接 MySQL 数据库时发生错误, 插件将自动关闭:")
             e.printStackTrace()
-            FirOnlineTime.instance!!.server.pluginManager.disablePlugin(FirOnlineTime.instance!!)
+            FirOnlineTime.instance.server.pluginManager.disablePlugin(FirOnlineTime.instance)
         }
     }
 
@@ -62,7 +62,7 @@ class MysqlDatabase private constructor() : Database{
                 }
             }
         } catch (e: SQLException) {
-            FirOnlineTime.instance!!.logger.severe("建表时发生错误: $e")
+            FirOnlineTime.instance.logger.severe("建表时发生错误: $e")
         }
     }
 
@@ -83,7 +83,7 @@ class MysqlDatabase private constructor() : Database{
                 }
             }
         } catch (e: SQLException) {
-            FirOnlineTime.instance!!.logger.severe("在线时间-插入/更新数据时发生错误: $e")
+            FirOnlineTime.instance.logger.severe("在线时间-插入/更新数据时发生错误: $e")
         }
     }
 

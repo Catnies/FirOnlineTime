@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "top.catnies"
-version = "1.0.11"
+version = "1.0.12"
 kotlin.jvmToolchain(17)
 
 repositories {
@@ -33,6 +33,14 @@ dependencies {
 tasks{
     build {
         dependsOn("shadowJar")
+    }
+    runServer {
+        dependsOn(shadowJar)
+        dependsOn(jar)
+        minecraftVersion("1.21.8")
+        downloadPlugins {
+            hangar("PlaceholderAPI", "2.11.6")
+        }
     }
 }
 

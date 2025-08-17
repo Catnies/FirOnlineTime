@@ -1,5 +1,7 @@
 package top.catnies.firOnlineTime.database
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import top.catnies.firOnlineTime.FirOnlineTime
@@ -18,19 +20,35 @@ class SqliteDatabase private constructor() : Database {
 
     private var url: String = "jdbc:sqlite:plugins/FirOnlineTime/database.db"
     private val tableName: String = SettingsManager.instance.TABLE_NAME
-    lateinit var connection: Connection
+    private lateinit var sqlite: HikariDataSource
 
     companion object {
         val instance: SqliteDatabase by lazy { SqliteDatabase().apply {
-            connection = DriverManager.getConnection(url)
+            reload()
             createTable()
         } }
+    }
+
+    fun reload() {
+        try {
+            val hikariConfig = HikariConfig()
+            hikariConfig.jdbcUrl = url
+            hikariConfig.driverClassName = "org.sqlite.JDBC"
+            hikariConfig.maximumPoolSize = 10
+            sqlite = HikariDataSource(hikariConfig)
+
+            FirOnlineTime.instance.logger.info("SQLite 数据库已连接成功！")
+        } catch (e: Exception) {
+            FirOnlineTime.instance.logger.severe("连接 SQLite 数据库时发生错误, 插件将自动关闭:")
+            e.printStackTrace()
+            FirOnlineTime.instance.server.pluginManager.disablePlugin(FirOnlineTime.instance)
+        }
     }
 
     // 建表函数
     fun createTable() {
         try {
-            connection.use { connection ->
+            sqlite.connection.use { connection ->
                 connection.prepareStatement(
                     """
                     CREATE TABLE IF NOT EXISTS $tableName (
@@ -54,7 +72,7 @@ class SqliteDatabase private constructor() : Database {
     override fun upsertOnlineTime(player: OfflinePlayer, date: Date, addTime: Long) {
         val uuid = player.uniqueId.toString()
         try {
-            connection.use { connection ->
+            sqlite.connection.use { connection ->
                 // 与Mysql不同, Sqlite不支持ON DUPLICATE KEY UPDATE
                 val sql = """
                 INSERT INTO $tableName (uuid, date, onlineTime)
@@ -78,7 +96,7 @@ class SqliteDatabase private constructor() : Database {
     override fun queryPlayerData(player: OfflinePlayer, baseDate: Date, queryType: QueryType): Long {
         val uuid = player.uniqueId.toString()
         try {
-            connection.use { connection ->
+            sqlite.connection.use { connection ->
                 // 根据查询类型动态构建SQL
                 val sql = if (queryType == QueryType.TOTAL) {
                     "SELECT onlineTime FROM $tableName WHERE uuid = ?"
@@ -123,7 +141,7 @@ class SqliteDatabase private constructor() : Database {
     override fun queryOnlineDays(player: OfflinePlayer, baseDate: Date, queryType: QueryType): Int {
         val uuid = player.uniqueId.toString()
         return try {
-            connection.use { connection ->
+            sqlite.connection.use { connection ->
                 // 基础查询模板
                 val sqlTemplate = when (queryType) {
                     QueryType.TOTAL -> "SELECT COUNT(DISTINCT date) FROM $tableName WHERE uuid = ?"
@@ -164,7 +182,7 @@ class SqliteDatabase private constructor() : Database {
     override fun queryOnlineDays(player: OfflinePlayer, startDate: Date, endDate: Date): Int {
         val uuid = player.uniqueId.toString()
         return try {
-            connection.use { connection ->
+            sqlite.connection.use { connection ->
                 // 固定语法：查询指定日期范围内的不同日期计数
                 val sql = "SELECT COUNT(DISTINCT date) FROM $tableName WHERE uuid = ? AND date BETWEEN ? AND ?"
 
