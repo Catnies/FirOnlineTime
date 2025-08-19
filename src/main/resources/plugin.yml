@@ -1,7 +1,7 @@
 name: FirOnlineTime
 version: '${version}'
 main: top.catnies.firOnlineTime.FirOnlineTime
-api-version: '1.18'
+api-version: '1.16'
 folia-supported: true
 softdepend:
   - PlaceholderAPI
