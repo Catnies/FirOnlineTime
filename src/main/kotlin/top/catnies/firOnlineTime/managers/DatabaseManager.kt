@@ -31,7 +31,6 @@ class DatabaseManager private constructor() {
             "sqlite" -> database = SqliteDatabase.instance
             "mysql" -> database = MysqlDatabase.instance
             "postgresql", "psql" -> database = PsqlDatabase.instance
-            else -> database = SqliteDatabase.instance // 默认使用 SQLite
         }
     }
 }
