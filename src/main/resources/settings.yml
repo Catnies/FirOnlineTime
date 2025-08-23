@@ -1,15 +1,33 @@
-# 将缓存上传到数据库的间隔 (秒)
-CacheUpdateInterval: 300
+# 配置版本
+config-version: 2.0
 
-# 在尝试访问离线玩家的数据时, 离线玩家数据会进行缓存. 随后每间隔多久时间会尝试从数据库中更新一次缓存? (秒)
-OfflinePlayerUpdateInterval: 300
+# 缓存更新间隔（秒）
+CacheUpdateInterval: 600
 
-# 数据库配置, 支持 SQLite 和 MySQL
-DatabaseType: "SQLite"
+# 离线玩家数据更新间隔（秒）
+OfflinePlayerUpdateInterval: 600
+
+# 数据库类型: SQLite, MySQL 或 PostgreSQL
+DatabaseType: PostgreSQL
+
+# MySQL 配置
 MySQL:
-  jdbc-url: "jdbc:mysql://127.0.0.1:3306/minecraft?useSSL=false&autoReconnect=true"
-  jdbc-class: "com.mysql.cj.jdbc.Driver"
+  jdbc-url: jdbc:mysql://localhost:3306/minecraft
+  jdbc-class: com.mysql.cj.jdbc.Driver
   properties:
-    table_name: "fir_online_time"
-    user: "catnies"
-    password: "minato"
+    user: root
+    password: password
+    table-name: fir_online_time
+
+# PostgreSQL 配置
+PostgreSQL:
+  jdbc-url: jdbc:postgresql://localhost:5432/minecraft
+  jdbc-class: org.postgresql.Driver
+  properties:
+    user: postgres
+    password: password
+    table-name: fir_online_time
+
+# SQLite 配置
+SQLite:
+  table-name: fir_online_time
