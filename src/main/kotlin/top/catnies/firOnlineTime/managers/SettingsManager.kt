@@ -29,10 +29,30 @@ class SettingsManager private constructor(){
 
         // Database
         DatabaseType = settings.getString("DatabaseType", "SQLite")!!
-        JDBC_URL = settings.getString("MySQL.jdbc-url")!!
-        JDBC_DRIVER = settings.getString("MySQL.jdbc-class")!!
-        USERNAME = settings.getString("MySQL.properties.user")!!
-        PASSWORD = settings.getString("MySQL.properties.password")!!
-        TABLE_NAME = settings.getString("MySQL.properties.table-name", "fir_online_time")!!
+        
+        // 根据数据库类型获取相应的配置
+        when (DatabaseType.lowercase()) {
+            "mysql" -> {
+                JDBC_URL = settings.getString("MySQL.jdbc-url")!!
+                JDBC_DRIVER = settings.getString("MySQL.jdbc-class")!!
+                USERNAME = settings.getString("MySQL.properties.user")!!
+                PASSWORD = settings.getString("MySQL.properties.password")!!
+                TABLE_NAME = settings.getString("MySQL.properties.table-name", "fir_online_time")!!
+            }
+            "postgresql", "psql" -> {
+                JDBC_URL = settings.getString("PostgreSQL.jdbc-url")!!
+                JDBC_DRIVER = settings.getString("PostgreSQL.jdbc-class")!!
+                USERNAME = settings.getString("PostgreSQL.properties.user")!!
+                PASSWORD = settings.getString("PostgreSQL.properties.password")!!
+                TABLE_NAME = settings.getString("PostgreSQL.properties.table-name", "fir_online_time")!!
+            }
+            else -> { // SQLite 或其他
+                JDBC_URL = "jdbc:sqlite:${FirOnlineTime.instance.dataFolder}/data.db"
+                JDBC_DRIVER = "org.sqlite.JDBC"
+                USERNAME = ""
+                PASSWORD = ""
+                TABLE_NAME = settings.getString("SQLite.table-name", "fir_online_time")!!
+            }
+        }
     }
 }
