@@ -1,0 +1,21 @@
+# 缓存更新间隔（秒）
+CacheUpdateInterval: 600
+
+# 离线玩家数据更新间隔（秒）
+OfflinePlayerUpdateInterval: 600
+
+# 数据库类型: SQLite 或 MySQL
+DatabaseType: MySQL
+
+# MySQL 配置
+MySQL:
+  jdbc-url: jdbc:mysql://localhost:3306/minecraft
+  jdbc-class: com.mysql.cj.jdbc.Driver
+  properties:
+    user: root
+    password: password
+    table-name: fir_online_time
+
+# SQLite 配置
+SQLite:
+  table-name: fir_online_time
