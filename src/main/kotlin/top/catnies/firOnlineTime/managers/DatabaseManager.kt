@@ -31,6 +31,10 @@ class DatabaseManager private constructor() {
             "sqlite" -> database = SqliteDatabase.instance
             "mysql" -> database = MysqlDatabase.instance
             "postgresql", "psql" -> database = PsqlDatabase.instance
+            else -> {
+                database = SqliteDatabase.instance
+                FirOnlineTime.instance.logger.warning("数据库类型配置错误！已自动回退到SQLite")
+            } // 默认使用 SQLite
         }
     }
 }
