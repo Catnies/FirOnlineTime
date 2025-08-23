@@ -18,6 +18,7 @@ class DatabaseManager private constructor(){
         when (SettingsManager.instance.DatabaseType.lowercase()) {
             "sqlite" -> database = SqliteDatabase.instance
             "mysql" -> database = MysqlDatabase.instance
+            "postgresql", "psql" -> database = PsqlDatabase.instance
         }
     }
 
