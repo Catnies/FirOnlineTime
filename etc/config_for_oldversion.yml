@@ -1,14 +1,11 @@
-# 配置版本
-config-version: 2.0
-
 # 缓存更新间隔（秒）
 CacheUpdateInterval: 600
 
 # 离线玩家数据更新间隔（秒）
 OfflinePlayerUpdateInterval: 600
 
-# 数据库类型: SQLite, MySQL 或 PostgreSQL
-DatabaseType: PostgreSQL
+# 数据库类型: SQLite 或 MySQL
+DatabaseType: MySQL
 
 # MySQL 配置
 MySQL:
@@ -16,15 +13,6 @@ MySQL:
   jdbc-class: com.mysql.cj.jdbc.Driver
   properties:
     user: root
-    password: password
-    table-name: fir_online_time
-
-# PostgreSQL 配置
-PostgreSQL:
-  jdbc-url: jdbc:postgresql://localhost:5432/minecraft
-  jdbc-class: org.postgresql.Driver
-  properties:
-    user: postgres
     password: password
     table-name: fir_online_time
 
