@@ -48,6 +48,7 @@ class MysqlDatabase private constructor() : Database{
     fun createTable() {
         try {
             mysql.connection.use { connection ->
+                // 先创建表
                 connection.prepareStatement(
                     """
                     CREATE TABLE IF NOT EXISTS $tableName (
@@ -56,9 +57,33 @@ class MysqlDatabase private constructor() : Database{
                     date Date NOT NULL, 
                     onlineTime BIGINT NOT NULL)
                     """
-                    .trimIndent()
+                        .trimIndent()
                 ).use { statement ->
                     statement.execute()
+                }
+
+                // 检查并添加唯一索引，确保每个玩家每天只有一条记录
+                val checkIndexSql = """
+                    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                    AND TABLE_NAME = ? 
+                    AND INDEX_NAME = 'unique_player_date'
+                """.trimIndent()
+
+                connection.prepareStatement(checkIndexSql).use { checkStatement ->
+                    checkStatement.setString(1, tableName)
+                    val resultSet = checkStatement.executeQuery()
+                    resultSet.next()
+                    val indexExists = resultSet.getInt(1) > 0
+
+                    // 如果唯一索引不存在，则创建它
+                    if (!indexExists) {
+                        val createIndexSql = "ALTER TABLE $tableName ADD UNIQUE INDEX unique_player_date (uuid, date)"
+                        connection.prepareStatement(createIndexSql).use { indexStatement ->
+                            indexStatement.execute()
+                        }
+                        FirOnlineTime.instance.logger.info("已为表 $tableName 创建唯一索引 unique_player_date")
+                    }
                 }
             }
         } catch (e: SQLException) {
@@ -70,11 +95,12 @@ class MysqlDatabase private constructor() : Database{
     override fun upsertOnlineTime(player: OfflinePlayer, date: Date, addTime: Long) {
         val uuid = player.uniqueId.toString()
         try {
-            mysql.connection.use { connection -> val sql = """
-                INSERT INTO $tableName (uuid, date, onlineTime)
-                VALUES (?, ?, ?)
-                ON DUPLICATE KEY UPDATE onlineTime = onlineTime + VALUES(onlineTime)
-            """.trimIndent()
+            mysql.connection.use { connection ->
+                val sql = """
+                    INSERT INTO $tableName (uuid, date, onlineTime)
+                    VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE onlineTime = onlineTime + VALUES(onlineTime)
+                """.trimIndent()
                 connection.prepareStatement(sql).use { statement ->
                     statement.setString(1, uuid)
                     statement.setDate(2, java.sql.Date(date.time))  // 修正 Date 类型转换

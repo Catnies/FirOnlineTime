@@ -8,7 +8,7 @@ CacheUpdateInterval: 600
 OfflinePlayerUpdateInterval: 600
 
 # 数据库类型: SQLite, MySQL 或 PostgreSQL
-DatabaseType: PostgreSQL
+DatabaseType: SQLite
 
 # MySQL 配置
 MySQL:
