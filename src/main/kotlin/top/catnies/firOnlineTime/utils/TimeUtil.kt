@@ -3,6 +3,7 @@ package top.catnies.firOnlineTime.utils
 import java.sql.Date
 import java.time.*
 import java.time.temporal.TemporalAdjusters
+import kotlin.time.toDuration
 
 object TimeUtil {
 
@@ -43,7 +44,12 @@ object TimeUtil {
         hours %= 24
         minutes %= 60
         seconds %= 60
-        return String.format("%d天 %02d小时%02d分钟%02d秒", days, hours, minutes, seconds)
+        val parts = mutableListOf<String>()
+        if (days > 0) parts.add("${days}天")
+        if (hours > 0 || days > 0) parts.add(String.format("%02d小时", hours))
+        if (minutes > 0 || hours > 0 || days > 0) parts.add(String.format("%02d分钟", minutes))
+        parts.add(String.format("%02d秒", seconds))
+        return parts.joinToString("")
     }
 
     /**

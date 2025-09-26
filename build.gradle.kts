@@ -6,8 +6,7 @@ plugins {
 }
 
 group = "top.catnies"
-version = "1.0.12"
-kotlin.jvmToolchain(21)
+version = "1.0.14"
 
 repositories {
     mavenCentral()
