@@ -26,22 +26,22 @@ class FirOnlineTimePlaceholder private constructor() : PlaceholderExpansion() {
 
         return when (params) {
             // 当日
-            "today" -> TimeUtil.formatTimeByMillis(FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TODAY))
+            "today" -> FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TODAY).let { TimeUtil.formatTimeByMillis(it) }
             "today_value" -> FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TODAY).toString()
             "today_days" -> FirOnlineTimeAPI.getPlayerOnlineDays(player, QueryType.TODAY).toString()
 
             // 当周
-            "week" -> TimeUtil.formatTimeByMillis(FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.WEEK))
+            "week" -> FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.WEEK).let { TimeUtil.formatTimeByMillis(it) }
             "week_value" -> FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.WEEK).toString()
             "week_days" -> FirOnlineTimeAPI.getPlayerOnlineDays(player, QueryType.WEEK).toString()
 
             // 当月
-            "month" -> TimeUtil.formatTimeByMillis(FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.MONTH))
+            "month" -> FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.MONTH).let { TimeUtil.formatTimeByMillis(it) }
             "month_value" -> FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.MONTH).toString()
             "month_days" -> FirOnlineTimeAPI.getPlayerOnlineDays(player, QueryType.MONTH).toString()
 
             // 总
-            "total" -> TimeUtil.formatTimeByMillis(FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TOTAL))
+            "total" -> FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TOTAL).let { TimeUtil.formatTimeByMillis(it) }
             "total_value" -> FirOnlineTimeAPI.getPlayerOnlineTime(player, QueryType.TOTAL).toString()
             "total_days" -> FirOnlineTimeAPI.getPlayerOnlineDays(player, QueryType.TOTAL).toString()
 
@@ -69,7 +69,7 @@ class FirOnlineTimePlaceholder private constructor() : PlaceholderExpansion() {
             }
 
             val timeMillis = FirOnlineTimeAPI.getPlayerOnlineTime(player, queryType)
-            return formatCustomTime(timeMillis, formatPattern)
+            return timeMillis?.let { formatCustomTime(it, formatPattern) }
         }
 
         return null

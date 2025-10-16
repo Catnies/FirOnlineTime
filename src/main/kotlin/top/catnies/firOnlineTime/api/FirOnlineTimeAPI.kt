@@ -1,9 +1,6 @@
 package top.catnies.firOnlineTime.api
 
-import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
-import top.catnies.firOnlineTime.FirOnlineTime
-import top.catnies.firOnlineTime.database.MysqlDatabase
 import top.catnies.firOnlineTime.database.PlayerData
 import top.catnies.firOnlineTime.database.QueryType
 import top.catnies.firOnlineTime.managers.DataCacheManager
@@ -23,7 +20,9 @@ object FirOnlineTimeAPI {
     fun getPlayerOnlineTime(player: OfflinePlayer, type: QueryType): Long {
         // 获取玩家缓存
         val data = if (player.isOnline) {
-            DataCacheManager.instance.onlineCache[player.uniqueId]!!
+            DataCacheManager.instance.onlineCache[player.uniqueId] ?:
+            // 如果缓存还没创建完成, 就阻塞查询一次
+            return DatabaseManager.instance.database.queryPlayerData(player, TimeUtil.getNowSQLDate(), type)
         } else {
             DataCacheManager.instance.offlineCache[player.uniqueId] ?: PlayerData.createOfflineData(player) // 没有离线缓存就新建离线缓存
         }
